@@ -37,7 +37,7 @@ class ToolWalletTest(BitcoinTestFramework):
         assert_equal(stdout, output)
 
     def run_test(self):
-
+        self.log.info('Test raising and error messages with various bad commands')
         self.assert_raises_tool_error('Invalid command: foo', 'foo')
         # `bitcoin-wallet help` is an error. Use `bitcoin-wallet -help`
         self.assert_raises_tool_error('Invalid command: help', 'help')
@@ -46,9 +46,11 @@ class ToolWalletTest(BitcoinTestFramework):
         self.assert_raises_tool_error('Error loading wallet.dat. Is wallet being used by other process?', '-wallet=wallet.dat', 'info')
         self.assert_raises_tool_error('Error: no wallet file at nonexistent.dat', '-wallet=nonexistent.dat', 'info')
 
-        # stop the node to close the wallet to call info command
+        # Stop the node to close the wallet to call the info command.
+        self.log.info('Stop node')
         self.stop_node(0)
 
+        self.log.info('Call wallet tool info')
         out = textwrap.dedent('''\
             Wallet info
             ===========
@@ -60,11 +62,17 @@ class ToolWalletTest(BitcoinTestFramework):
         ''')
         self.assert_tool_output(out, '-wallet=wallet.dat', 'info')
 
-        # mutate the wallet to check the info command output changes accordingly
+        # Mutate the wallet to check the info command output changes accordingly.
+        self.log.info('Start node')
         self.start_node(0)
+
+        self.log.info('Generate transaction to mutate wallet')
         self.nodes[0].generate(1)
+
+        self.log.info('Stop node')
         self.stop_node(0)
 
+        self.log.info('Call wallet tool info after generating a transaction')
         out = textwrap.dedent('''\
             Wallet info
             ===========
@@ -76,6 +84,7 @@ class ToolWalletTest(BitcoinTestFramework):
         ''')
         self.assert_tool_output(out, '-wallet=wallet.dat', 'info')
 
+        self.log.info('Call wallet tool create')
         out = textwrap.dedent('''\
             Topping up keypool...
             Wallet info
@@ -88,8 +97,13 @@ class ToolWalletTest(BitcoinTestFramework):
         ''')
         self.assert_tool_output(out, '-wallet=foo', 'create')
 
+        self.log.info('Start node with arg -wallet=foo')
         self.start_node(0, ['-wallet=foo'])
+
+        self.log.info('Call getwalletinfo()')
         out = self.nodes[0].getwalletinfo()
+
+        self.log.info('Stop node')
         self.stop_node(0)
 
         assert_equal(0, out['txcount'])
