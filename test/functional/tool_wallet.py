@@ -3,11 +3,12 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test bitcoin-wallet."""
+import os.path
 import subprocess
 import textwrap
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal
+from test_framework.util import assert_equal, assert_greater_than
 
 class ToolWalletTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -36,6 +37,12 @@ class ToolWalletTest(BitcoinTestFramework):
         assert_equal(stderr, '')
         assert_equal(stdout, output)
 
+    def fetch_and_log_file_timestamp(self, op):
+        wallet_path = os.path.join(self.nodes[0].datadir, "regtest", "wallets", "wallet.dat")
+        timestamp = os.path.getmtime(wallet_path)
+        self.log.info('Wallet file timestamp {0}: {1}'.format(op, timestamp))
+        return timestamp
+
     def run_test(self):
         self.log.info('Test raising and error messages with various bad commands')
         self.assert_raises_tool_error('Invalid command: foo', 'foo')
@@ -47,7 +54,7 @@ class ToolWalletTest(BitcoinTestFramework):
         self.assert_raises_tool_error('Error: no wallet file at nonexistent.dat', '-wallet=nonexistent.dat', 'info')
 
         # Stop the node to close the wallet to call the info command.
-        self.log.info('Stop node')
+        self.log.info('Stop node\r\n')
         self.stop_node(0)
 
         self.log.info('Call wallet tool info')
@@ -60,7 +67,11 @@ class ToolWalletTest(BitcoinTestFramework):
             Transactions: 0
             Address Book: 3
         ''')
+        file_timestamp_before = self.fetch_and_log_file_timestamp('before info')
         self.assert_tool_output(out, '-wallet=wallet.dat', 'info')
+        file_timestamp_after  = self.fetch_and_log_file_timestamp(' after info')
+        assert_greater_than(file_timestamp_after, file_timestamp_before)
+        self.log.info('Wallet file timestamp increased!\r\n')
 
         # Mutate the wallet to check the info command output changes accordingly.
         self.log.info('Start node')
@@ -69,7 +80,7 @@ class ToolWalletTest(BitcoinTestFramework):
         self.log.info('Generate transaction to mutate wallet')
         self.nodes[0].generate(1)
 
-        self.log.info('Stop node')
+        self.log.info('Stop node\r\n')
         self.stop_node(0)
 
         self.log.info('Call wallet tool info after generating a transaction')
@@ -82,7 +93,11 @@ class ToolWalletTest(BitcoinTestFramework):
             Transactions: 1
             Address Book: 3
         ''')
+        file_timestamp_before = self.fetch_and_log_file_timestamp('before info')
         self.assert_tool_output(out, '-wallet=wallet.dat', 'info')
+        file_timestamp_after = self.fetch_and_log_file_timestamp(' after info')
+        assert_greater_than(file_timestamp_after, file_timestamp_before)
+        self.log.info('Wallet file timestamp increased!\r\n')
 
         self.log.info('Call wallet tool create')
         out = textwrap.dedent('''\
@@ -95,13 +110,21 @@ class ToolWalletTest(BitcoinTestFramework):
             Transactions: 0
             Address Book: 0
         ''')
+        file_timestamp_before = self.fetch_and_log_file_timestamp('before create')
         self.assert_tool_output(out, '-wallet=foo', 'create')
+        file_timestamp_after = self.fetch_and_log_file_timestamp(' after create')
+        assert_equal(file_timestamp_after, file_timestamp_before)
+        self.log.info('Wallet file timestamp unchanged\r\n')
 
         self.log.info('Start node with arg -wallet=foo')
         self.start_node(0, ['-wallet=foo'])
 
         self.log.info('Call getwalletinfo()')
+        file_timestamp_before = self.fetch_and_log_file_timestamp('before getwalletinfo')
         out = self.nodes[0].getwalletinfo()
+        file_timestamp_after  = self.fetch_and_log_file_timestamp(' after getwalletinfo')
+        assert_equal(file_timestamp_after, file_timestamp_before)
+        self.log.info('Wallet file timestamp unchanged\r\n')
 
         self.log.info('Stop node')
         self.stop_node(0)
