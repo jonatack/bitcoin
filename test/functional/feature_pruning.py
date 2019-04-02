@@ -65,7 +65,7 @@ def mine_large_blocks(node, n):
         height += 1
         mine_large_blocks.nTime += 1
 
-def calc_usage(blockdir):
+def calculate_disk_usage_in_mb(blockdir):
     return sum(os.path.getsize(blockdir + f) for f in os.listdir(blockdir) if os.path.isfile(os.path.join(blockdir, f))) / (1024. * 1024.)
 
 class PruneTest(BitcoinTestFramework):
@@ -122,7 +122,8 @@ class PruneTest(BitcoinTestFramework):
     def test_height_min(self):
         assert os.path.isfile(os.path.join(self.prunedir, "blk00000.dat")), "blk00000.dat is missing, pruning too early"
         self.log.info("Success")
-        self.log.info("Though we're already using more than 550MiB, current usage: %d" % calc_usage(self.prunedir))
+        usage = calculate_disk_usage_in_mb(self.prunedir)
+        self.log.info("Though we're already using more than 550MiB, current usage: {}".format(usage))
         self.log.info("Mining 25 more blocks should cause the first block file to be pruned")
         # Pruning doesn't run until we're allocating another chunk, 20 full blocks past the height cutoff will ensure this
         mine_large_blocks(self.nodes[0], 25)
@@ -131,8 +132,8 @@ class PruneTest(BitcoinTestFramework):
         wait_until(lambda: not os.path.isfile(os.path.join(self.prunedir, "blk00000.dat")), timeout=30)
 
         self.log.info("Success")
-        usage = calc_usage(self.prunedir)
-        self.log.info("Usage should be below target: %d" % usage)
+        usage = calculate_disk_usage_in_mb(self.prunedir)
+        self.log.info("Usage should be below target of 550Mb: {}".format(usage))
         assert_greater_than(550, usage)
 
     def create_chain_with_staleblocks(self):
@@ -155,7 +156,8 @@ class PruneTest(BitcoinTestFramework):
             connect_nodes(self.nodes[0], 2)
             sync_blocks(self.nodes[0:3])
 
-        self.log.info("Usage can be over target because of high stale rate: %d" % calc_usage(self.prunedir))
+        usage = calculate_disk_usage_in_mb(self.prunedir)
+        self.log.info("Usage can be over target of 550Mb because of high stale rate: {}".format(usage))
 
     def reorg_test(self):
         # Node 1 will mine a 300 block chain starting 287 blocks back from Node 0 and Node 2's tip
@@ -193,14 +195,16 @@ class PruneTest(BitcoinTestFramework):
         sync_blocks(self.nodes[0:3], timeout=120)
 
         self.log.info("Verify height on node 2: %d" % self.nodes[2].getblockcount())
-        self.log.info("Usage possibly still high because of stale blocks in block files: %d" % calc_usage(self.prunedir))
+
+        usage = calculate_disk_usage_in_mb(self.prunedir)
+        self.log.info("Usage possibly still high because of stale blocks in block files: {}".format(usage))
 
         self.log.info("Mine 220 more large blocks so we have requisite history")
 
         mine_large_blocks(self.nodes[0], 220)
 
-        usage = calc_usage(self.prunedir)
-        self.log.info("Usage should be below target: %d" % usage)
+        usage = calculate_disk_usage_in_mb(self.prunedir)
+        self.log.info("Usage should be below target of 550Mb: {}".format(usage))
         assert_greater_than(550, usage)
 
     def reorg_back(self):
