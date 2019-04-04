@@ -23,6 +23,8 @@ MIN_BLOCKS_TO_KEEP = 288
 # compatible with pruning based on key creation time.
 TIMESTAMP_WINDOW = 2 * 60 * 60
 
+ONE_MEGA_BYTE = 1024.0 * 1024.0
+
 def mine_large_blocks(node, n):
     # Make a large scriptPubKey for the coinbase transaction. This is OP_RETURN
     # followed by 950k of OP_NOP. This would be non-standard in a non-coinbase
@@ -66,7 +68,7 @@ def mine_large_blocks(node, n):
         mine_large_blocks.nTime += 1
 
 def calculate_disk_usage_in_mb(blockdir):
-    return sum(os.path.getsize(blockdir + f) for f in os.listdir(blockdir) if os.path.isfile(os.path.join(blockdir, f))) / (1024. * 1024.)
+    return sum(os.path.getsize(blockdir + f) for f in os.listdir(blockdir) if os.path.isfile(os.path.join(blockdir, f))) / ONE_MEGA_BYTE
 
 class PruneTest(BitcoinTestFramework):
     def set_test_params(self):
