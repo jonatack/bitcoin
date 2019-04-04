@@ -52,7 +52,7 @@ def mine_large_blocks(node, n):
         block.nVersion = best_block["version"]
         block.hashPrevBlock = previousblockhash
         block.nTime = mine_large_blocks.nTime
-        block.nBits = int('207fffff', 16)
+        block.nBits = 0x207fffff
         block.nNonce = 0
         block.vtx = [coinbase_tx]
         block.hashMerkleRoot = block.calc_merkle_root()
