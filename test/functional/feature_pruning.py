@@ -16,6 +16,10 @@ from test_framework.script import CScript, OP_RETURN, OP_NOP
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_greater_than, assert_raises_rpc_error, connect_nodes, disconnect_nodes, sync_blocks, wait_until
 
+TARGET_DISKSPACE = 550
+
+PRUNE_ARG = '-prune={}'.format(TARGET_DISKSPACE)
+
 MIN_BLOCKS_TO_KEEP = 288
 
 # Rescans start at the earliest block up to 2 hours before a key timestamp, so
@@ -83,10 +87,10 @@ class PruneTest(BitcoinTestFramework):
         self.extra_args = [
             self.full_node_default_args,
             self.full_node_default_args,
-            ["-maxreceivebuffer=20000", "-prune=550"],
+            ["-maxreceivebuffer=20000", PRUNE_ARG],
             ["-maxreceivebuffer=20000"],
             ["-maxreceivebuffer=20000"],
-            ["-prune=550"],
+            [PRUNE_ARG],
         ]
 
     def skip_test_if_missing_module(self):
@@ -116,7 +120,7 @@ class PruneTest(BitcoinTestFramework):
         sync_blocks(self.nodes[0:2])
         self.nodes[0].generate(150)
 
-        # Then mine enough full blocks to create more than 550MiB of data
+        # Mine enough full blocks to create more data than TARGET_DISKSPACE.
         mine_large_blocks(self.nodes[0], 645)
 
         sync_blocks(self.nodes[0:5])
@@ -125,7 +129,7 @@ class PruneTest(BitcoinTestFramework):
         assert os.path.isfile(os.path.join(self.prunedir, "blk00000.dat")), "blk00000.dat is missing, pruning too early"
         self.log.info("Success")
         usage = calculate_disk_usage_in_mb(self.prunedir)
-        self.log.info("Though we're already using more than 550MiB, current usage: {}".format(usage))
+        self.log.info("Though we're already using more than {0}MiB, current usage: {1}".format(TARGET_DISKSPACE, usage))
         self.log.info("Mining 25 more blocks should cause the first block file to be pruned")
         # Pruning doesn't run until we're allocating another chunk, 20 full blocks past the height cutoff will ensure this
         mine_large_blocks(self.nodes[0], 25)
@@ -135,8 +139,8 @@ class PruneTest(BitcoinTestFramework):
 
         self.log.info("Success")
         usage = calculate_disk_usage_in_mb(self.prunedir)
-        self.log.info("Usage should be below target of 550Mb: {}".format(usage))
-        assert_greater_than(550, usage)
+        self.log.info("Usage should be below target of {0}Mb: {1}".format(TARGET_DISKSPACE, usage))
+        assert_greater_than(TARGET_DISKSPACE, usage)
 
     def create_chain_with_staleblocks(self):
         # Create stale blocks in manageable sized chunks
@@ -159,7 +163,7 @@ class PruneTest(BitcoinTestFramework):
             sync_blocks(self.nodes[0:3])
 
         usage = calculate_disk_usage_in_mb(self.prunedir)
-        self.log.info("Usage can be over target of 550Mb because of high stale rate: {}".format(usage))
+        self.log.info("Usage can be over target of {0}Mb because of high stale rate: {1}".format(TARGET_DISKSPACE, usage))
 
     def reorg_test(self):
         # Node 1 will mine a 300 block chain starting 287 blocks back from Node 0 and Node 2's tip
@@ -206,8 +210,8 @@ class PruneTest(BitcoinTestFramework):
         mine_large_blocks(self.nodes[0], 220)
 
         usage = calculate_disk_usage_in_mb(self.prunedir)
-        self.log.info("Usage should be below target of 550Mb: {}".format(usage))
-        assert_greater_than(550, usage)
+        self.log.info("Usage should be below target of {}Mb: {}".format(TARGET_DISKSPACE, usage))
+        assert_greater_than(TARGET_DISKSPACE, usage)
 
     def reorg_back(self):
         # Verify that a block on the old main chain fork has been pruned away
@@ -333,9 +337,9 @@ class PruneTest(BitcoinTestFramework):
         assert not has_block(2), "blk00002.dat is still there, should be pruned by now"
         assert not has_block(3), "blk00003.dat is still there, should be pruned by now"
 
-        # stop node, start back up with auto-prune at 550 MiB, make sure still runs
+        # Stop node, restart with auto-prune target, and ensure it still runs.
         self.stop_node(node_number)
-        self.start_node(node_number, extra_args=["-prune=550"])
+        self.start_node(node_number, extra_args=[PRUNE_ARG])
 
         self.log.info("Success")
 
@@ -343,7 +347,7 @@ class PruneTest(BitcoinTestFramework):
         # check that the pruning node's wallet is still in good shape
         self.log.info("Stop and start pruning node to trigger wallet rescan")
         self.stop_node(2)
-        self.start_node(2, extra_args=["-prune=550"])
+        self.start_node(2, extra_args=[PRUNE_ARG])
         self.log.info("Success")
 
         # check that wallet loads successfully when restarting a pruned node after IBD.
@@ -353,7 +357,7 @@ class PruneTest(BitcoinTestFramework):
         nds = [self.nodes[0], self.nodes[5]]
         sync_blocks(nds, wait=5, timeout=300)
         self.stop_node(5)  # stop and start to trigger rescan
-        self.start_node(5, extra_args=["-prune=550"])
+        self.start_node(5, extra_args=[PRUNE_ARG])
         self.log.info("Success")
 
     def run_test(self):
