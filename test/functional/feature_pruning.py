@@ -14,7 +14,15 @@ from test_framework.blocktools import create_coinbase
 from test_framework.messages import CBlock, ToHex
 from test_framework.script import CScript, OP_RETURN, OP_NOP
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_greater_than, assert_raises_rpc_error, connect_nodes, disconnect_nodes, sync_blocks, wait_until
+from test_framework.util import (
+    assert_equal,
+    assert_greater_than,
+    assert_raises_rpc_error,
+    connect_nodes,
+    disconnect_nodes,
+    sync_blocks,
+    wait_until
+)
 
 TARGET_DISKSPACE = 550
 
@@ -82,8 +90,8 @@ class PruneTest(BitcoinTestFramework):
         # Create nodes 0 and 1 to mine.
         # Create node 2 to test pruning.
         self.full_node_default_args = ["-maxreceivebuffer=20000", "-checkblocks=5"]
-        # Create nodes 3 and 4 to test manual pruning (they will be re-started with manual pruning later)
-        # Create nodes 5 to test wallet in prune mode, but do not connect
+        # Create nodes 3 and 4 to test manual pruning (they will be re-started with manual pruning later).
+        # Create nodes 5 to test wallet in prune mode, but do not connect.
         self.extra_args = [
             self.full_node_default_args,
             self.full_node_default_args,
