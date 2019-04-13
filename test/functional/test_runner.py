@@ -188,6 +188,7 @@ BASE_SCRIPTS = [
     'p2p_node_network_limited.py',
     'feature_blocksdir.py',
     'feature_config_args.py',
+    'rpc_getaddressinfo.py',
     'rpc_help.py',
     'feature_help.py',
     'feature_shutdown.py',
