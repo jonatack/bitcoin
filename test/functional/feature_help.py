@@ -1,11 +1,39 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Bitcoin Core developers
+# Copyright (c) 2018-2019 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-"""Verify that starting bitcoin with -h works as expected."""
+"""Test starting bitcoind with -help, -version, and invalid args/tokens."""
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
+
+HELP_ARGS      = ['-h', '--h', '-help', '--help', '-?', '--?']
+VERSION_ARGS   = ['-version', '--version']
+INVALID_ARGS   = ['---version', '-v', '--v', '---help']
+INVALID_TOKENS = ['help', 'h', '?', 'v', 'version']
+
+HELP_PHRASES = ['Usage:  bitcoind [options]', 'Options:', '-?', 'Print this help message']
+INVALID_PARAMETER_ERROR = 'Error parsing command line arguments: Invalid parameter '
+SPACING = 10
+
+def test_and_return_node_output(node, expected_return_code):
+    return_code = node.process.wait(timeout=5)
+    assert_equal(return_code, expected_return_code)
+
+    node.stdout.seek(0)
+    node.stderr.seek(0)
+    out = node.stdout.read().decode()
+    err = node.stderr.read().decode()
+    node.stdout.close()
+    node.stderr.close()
+
+    # Clean up TestNode state.
+    node.running = False
+    node.process = None
+    node.rpc_connected = False
+    node.rpc = None
+
+    return out, err
 
 class HelpTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -14,49 +42,33 @@ class HelpTest(BitcoinTestFramework):
 
     def setup_network(self):
         self.add_nodes(self.num_nodes)
-        # Don't start the node
-
-    def get_node_output(self, *, ret_code_expected):
-        ret_code = self.nodes[0].process.wait(timeout=5)
-        assert_equal(ret_code, ret_code_expected)
-        self.nodes[0].stdout.seek(0)
-        self.nodes[0].stderr.seek(0)
-        out = self.nodes[0].stdout.read()
-        err = self.nodes[0].stderr.read()
-        self.nodes[0].stdout.close()
-        self.nodes[0].stderr.close()
-
-        # Clean up TestNode state
-        self.nodes[0].running = False
-        self.nodes[0].process = None
-        self.nodes[0].rpc_connected = False
-        self.nodes[0].rpc = None
-
-        return out, err
+        # Don't start the node.
 
     def run_test(self):
-        self.log.info("Start bitcoin with -h for help text")
-        self.nodes[0].start(extra_args=['-h'])
-        # Node should exit immediately and output help to stdout.
-        output, _ = self.get_node_output(ret_code_expected=0)
-        assert b'Options' in output
-        self.log.info("Help text received: {} (...)".format(output[0:60]))
+        node = self.nodes[0]
 
-        self.log.info("Start bitcoin with -version for version information")
-        self.nodes[0].start(extra_args=['-version'])
-        # Node should exit immediately and output version to stdout.
-        output, _ = self.get_node_output(ret_code_expected=0)
-        assert b'version' in output
-        self.log.info("Version text received: {} (...)".format(output[0:60]))
+        for arg in HELP_ARGS:
+            self.log.info('Testing that bitcoind {} exits and outputs help text to stdout'.format(arg.ljust(SPACING)))
+            node.start(extra_args=[arg])
+            output, _ = test_and_return_node_output(node, expected_return_code=0)
+            for phrase in HELP_PHRASES:
+                assert phrase in output
 
-        # Test that arguments not in the help results in an error
-        self.log.info("Start bitcoind with -fakearg to make sure it does not start")
-        self.nodes[0].start(extra_args=['-fakearg'])
-        # Node should exit immediately and output an error to stderr
-        _, output = self.get_node_output(ret_code_expected=1)
-        assert b'Error parsing command line arguments' in output
-        self.log.info("Error message received: {} (...)".format(output[0:60]))
+        for arg in VERSION_ARGS:
+            self.log.info('Testing that bitcoind {} exits and outputs version text to stdout'.format(arg.ljust(SPACING)))
+            node.start(extra_args=[arg])
+            output, _ = test_and_return_node_output(node, expected_return_code=0)
+            assert 'Bitcoin Core Daemon version v' in output
 
+        for arg in INVALID_ARGS:
+            self.log.info('Testing that bitcoind {} raises invalid parameter error to stdout'.format(arg.ljust(SPACING)))
+            node.start(extra_args=[arg])
+            _, output = test_and_return_node_output(node, expected_return_code=1)
+            assert INVALID_PARAMETER_ERROR in output
+
+        for arg in INVALID_TOKENS:
+            self.log.info('Testing that bitcoind {} raises unexpected token error to stdout'.format(arg.ljust(SPACING)))
+            node.assert_start_raises_init_error([arg], "Error: Command line contains unexpected token '{}', see bitcoind -h for a list of options.".format(arg))
 
 if __name__ == '__main__':
     HelpTest().main()
