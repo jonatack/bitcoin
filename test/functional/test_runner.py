@@ -405,14 +405,12 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
 
         logging.debug("Cleaning up coverage data")
         coverage.cleanup()
-    else:
-        coverage_passed = True
 
     # Clear up the temp directory if all subdirectories are gone
     if not os.listdir(tmpdir):
         os.rmdir(tmpdir)
 
-    all_passed = all(map(lambda test_result: test_result.was_successful, test_results)) and coverage_passed
+    all_passed = all(map(lambda test_result: test_result.was_successful, test_results)) and (coverage is None or coverage_passed)
 
     # This will be a no-op unless failfast is True in which case there may be dangling
     # processes which need to be killed.
