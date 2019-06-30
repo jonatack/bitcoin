@@ -24,8 +24,8 @@ Communication Channels
 Most communication about Bitcoin Core development happens on IRC, in the
 #bitcoin-core-dev channel on Freenode. The easiest way to participate on IRC is
 with the web client, [webchat.freenode.net](https://webchat.freenode.net/). Chat
-history logs can be found
-on [http://www.erisian.com.au/bitcoin-core-dev/](http://www.erisian.com.au/bitcoin-core-dev/)
+history logs can be found on
+[http://www.erisian.com.au/bitcoin-core-dev/](http://www.erisian.com.au/bitcoin-core-dev/)
 and [http://gnusha.org/bitcoin-core-dev/](http://gnusha.org/bitcoin-core-dev/).
 
 Discussion about code base improvements happens in GitHub issues and on pull
@@ -36,16 +36,15 @@ The developer
 should be used to discuss complicated or controversial changes before working on
 a patch set.
 
-
 Contributor Workflow
 --------------------
 
 The codebase is maintained using the "contributor workflow" where everyone
 without exception contributes patch proposals using "pull requests". This
-facilitates social contribution, easy testing and peer review.
+facilitates social contribution, easy testing, and peer review.
 
 To contribute a patch, the workflow is as follows:
-
+*** WTF is with this list ***
   1. Fork repository
   1. Create topic branch
   1. Commit patches
@@ -53,16 +52,18 @@ To contribute a patch, the workflow is as follows:
 The project coding conventions in the [developer notes](doc/developer-notes.md)
 must be adhered to.
 
-In general [commits should be atomic](https://en.wikipedia.org/wiki/Atomic_commit#Atomic_commit_convention)
+In general,
+[commits should be atomic](https://en.wikipedia.org/wiki/Atomic_commit#Atomic_commit_convention)
 and diffs should be easy to read. For this reason do not mix any formatting
 fixes or code moves with actual code changes.
 
 Commit messages should be verbose by default consisting of a short subject line
 (50 chars max), a blank line and detailed explanatory text as separate
-paragraph(s), unless the title alone is self-explanatory (like "Corrected typo
-in init.cpp") in which case a single title line is sufficient. Commit messages should be
-helpful to people reading your code in the future, so explain the reasoning for
-your decisions. Further explanation [here](https://chris.beams.io/posts/git-commit/).
+paragraph(s), unless the title alone is self-explanatory (like "Trivial: Correct
+typo in init.cpp") in which case a single title line is sufficient. Commit
+messages should be helpful to people reading your code in the future, so explain
+the reasoning for your decisions. Further explanation
+[here](https://chris.beams.io/posts/git-commit/).
 
 If a particular commit references another issue, please add the reference. For
 example: `refs #1234` or `fixes #4321`. Using the `fixes` or `closes` keywords
@@ -110,7 +111,8 @@ Note that translations should not be submitted as pull requests, please see
 for more information on helping with translations.
 
 If a pull request is not to be considered for merging (yet), please
-prefix the title with [WIP] or use [Tasks Lists](https://help.github.com/articles/basic-writing-and-formatting-syntax/#task-lists)
+prefix the title with [WIP] or use
+[Tasks Lists](https://help.github.com/articles/basic-writing-and-formatting-syntax/#task-lists)
 in the body of the pull request to indicate tasks are pending.
 
 The body of the pull request should contain enough description about what the
@@ -122,7 +124,13 @@ At this stage one should expect comments and review from other contributors. You
 can add more commits to your pull request by committing them locally and pushing
 to your fork until you have satisfied all feedback.
 
-Note: Code review is a burdensome but important part of the development process, and as such, certain types of pull requests are rejected. In general, if the **improvements** do not warrant the **review effort** required, the PR has a high chance of being rejected. It is up to the PR author to convince the reviewers that the changes warrant the review effort, and if reviewers are "Concept NAK'ing" the PR, the author may need to present arguments and/or do research backing their suggested changes.
+Note: Code review is a burdensome but important part of the development process,
+and as such, certain types of pull requests are rejected. In general, if the
+**improvements** do not warrant the **review effort** required, the PR has a
+high chance of being rejected. It is up to the PR author to convince the
+reviewers that the changes warrant the review effort, and if reviewers are
+"Concept NACK'ing" the PR, the author may need to present arguments and/or do
+research backing the suggested changes.
 
 Squashing Commits
 ---------------------------
@@ -138,13 +146,14 @@ before it will be merged. The basic squashing workflow is shown below.
     # Save and quit.
     git push -f # (force push to GitHub)
 
-Please update the resulting commit message if needed, it should read as a
-coherent message. In most cases this means that you should not just list the
-interim commits.
+Please update the resulting commit message and pull request description for
+clarity and coherence. In most cases, this means not just listing the interim
+commits. Make sure the "what" and "why" of your changes will be clear to readers
+years from now.
 
-If you have problems with squashing (or other workflows with `git`), you can
-alternatively enable "Allow edits from maintainers" in the right GitHub
-sidebar and ask for help in the pull request.
+If you have problems with squashing or other git workflows, you can enable
+"Allow edits from maintainers" in the right-hand sidebar of the GitHub web
+interface and ask for help in the pull request.
 
 Please refrain from creating several pull requests for the same change.
 Use the pull request that is already open (or was created earlier) to amend
@@ -154,7 +163,6 @@ the respective change set.
 The length of time required for peer review is unpredictable and will vary from
 pull request to pull request.
 
-
 Pull Request Philosophy
 -----------------------
 
@@ -163,7 +171,6 @@ feature, fix a bug, or refactor code; but not a mixture. Please also avoid super
 pull requests which attempt to do too much, are overly large, or overly complex
 as this makes review difficult.
 
-
 ### Features
 
 When adding a new feature, thought must be given to the long term technical debt
@@ -171,7 +178,6 @@ and maintenance that feature may require after inclusion. Before proposing a new
 feature that will require maintenance, please consider if you are willing to
 maintain it (including bug fixing). If features get orphaned with no maintainer
 in the future, they may be removed by the Repository Maintainer.
-
 
 ### Refactoring
 
@@ -195,7 +201,6 @@ Trivial pull requests or pull requests that refactor the code with no clear
 benefits may be immediately closed by the maintainers to reduce unnecessary
 workload on reviewing.
 
-
 "Decision Making" Process
 -------------------------
 
@@ -214,12 +219,13 @@ In general, all pull requests must:
 
   - Have a clear use case, fix a demonstrable bug or serve the greater good of
     the project (for example refactoring for modularisation);
-  - Be well peer reviewed;
+  - Be well peer-reviewed;
   - Have unit tests and functional tests where appropriate;
-  - Follow code style guidelines ([C++](doc/developer-notes.md), [functional tests](test/functional/README.md));
+  - Follow code style guidelines ([C++](doc/developer-notes.md),
+    [functional tests](test/functional/README.md));
   - Not break the existing test suite;
   - Where bugs are fixed, where possible, there should be unit tests
-    demonstrating the bug and also proving the fix. This helps prevent regression.
+    demonstrating the bug and confirming the fix; this helps prevent regression;
   - Change relevant comments and documentation when behaviour of code changes.
 
 Patches that change Bitcoin consensus rules are considerably more involved than
@@ -228,7 +234,6 @@ extensive mailing list discussions and have a numbered BIP. While each case will
 be different, one should be prepared to expend more time and effort than for
 other kinds of patches because of increased peer review and consensus building
 requirements.
-
 
 ### Peer Review
 
@@ -242,77 +247,80 @@ spread out over GitHub, mailing list and IRC discussions).
 #### Conceptual Review
 
 A review can be a conceptual review, where the reviewer leaves a comment
- * `Concept (N)ACK`, meaning "I do (not) agree in the general goal of this pull
-   request",
+ * `Concept (N)ACK`, meaning "I do (not) agree with the general goal of this
+   pull request",
  * `Approach (N)ACK`, meaning `Concept ACK`, but "I do (not) agree with the
-   approach of this change".
+   implementation approach of this change".
 
 A `NACK` needs to include a rationale why the change is not worthwhile.
 NACKs without accompanying reasoning may be disregarded.
 
 #### Code Review
 
-After conceptual agreement on the change, code review can be provided. It is
-starting with `ACK BRANCH_COMMIT`, where `BRANCH_COMMIT` is the top of the
-topic branch. The review is followed by a description of how the reviewer did
-the review. The following
-language is used within pull-request comments:
+After conceptual agreement on the change, code review can be provided. A review
+begins with `ACK <BRANCH_COMMIT>`, where `<BRANCH_COMMIT>` is the top of the
+reviewed topic branch, followed by language like:
 
-  - "I have tested the code", involving
-    change-specific manual testing in addition to running the unit and functional
-    tests, and in case it is not obvious how the manual testing was done, it should
-    be described;
-  - "I have not tested the code, but I have reviewed it and it looks
-    OK, I agree it can be merged";
-  - Nit refers to trivial, often non-blocking issues.
+  - "I have tested the code", involving change-specific manual testing in
+    addition to running the unit and functional tests, and in case it is not
+    obvious how the manual testing was done, it should be described;
+  - "I have not tested the code, but I have reviewed it and it looks OK, I agree
+    it can be merged";
+  - "Nit" refers to a trivial, often non-blocking issue.
+
+A review should provide a brief, relevant description of how it was made --
+steps taken, criteria considered, test environment, and so forth.
 
 Project maintainers reserve the right to weigh the opinions of peer reviewers
-using common sense judgement and also may weight based on meritocracy: Those
-that have demonstrated a deeper commitment and understanding towards the project
-(over time) or have clear domain expertise may naturally have more weight, as
-one would expect in all walks of life.
+using common sense judgement and meritocracy. Those who have demonstrated a
+deeper commitment and understanding of the project over time or who have clear
+domain expertise may naturally garner more weight, as one would expect in all
+walks of life.
 
-Where a patch set affects consensus critical code, the bar will be set much
-higher in terms of discussion and peer review requirements, keeping in mind that
-mistakes could be very costly to the wider community. This includes refactoring
-of consensus critical code.
+Where a patch set affects consensus-critical code, the bar will much higher in
+terms of discussion and peer review requirements, keeping in mind that mistakes
+could be very costly to the wider community.
 
-Where a patch set proposes to change the Bitcoin consensus, it must have been
-discussed extensively on the mailing list and IRC, be accompanied by a widely
-discussed BIP and have a generally widely perceived technical consensus of being
-a worthwhile change based on the judgement of the maintainers.
+Where a patch set proposes to change the Bitcoin consensus, the change must have
+been discussed extensively on the mailing list and IRC, be accompanied by a
+widely discussed BIP, and have a generally widely perceived technical consensus
+of being a worthwhile change based on the judgement of the maintainers.
 
 ### Finding Reviewers
 
 As most reviewers are themselves developers with their own projects, the review
-process can be quite lengthy, and some amount of patience is required. If you find
-that you've been waiting for a pull request to be given attention for several
-months, there may be a number of reasons for this, some of which you can do something
-about:
+process can be quite lengthy, and some amount of patience is required. If you
+find that you've been waiting for a pull request to be given attention for
+several months, there may be a number of reasons for this, some of which you can
+do something about:
 
-  - It may be because of a feature freeze due to an upcoming release. During this time,
-    only bug fixes are taken into consideration. If your pull request is a new feature,
-    it will not be prioritized until the release is over. Wait for release.
-  - It may be because the changes you are suggesting do not appeal to people. Rather than
-    nits and critique, which require effort and means they care enough to spend time on your
-    contribution, thundering silence is a good sign of widespread (mild) dislike of a given change
-    (because people don't assume *others* won't actually like the proposal). Don't take
-    that personally, though! Instead, take another critical look at what you are suggesting
-    and see if it: changes too much, is too broad, doesn't adhere to the
-    [developer notes](doc/developer-notes.md), is dangerous or insecure, is messily written, etc.
-    Identify and address any of the issues you find. Then ask e.g. on IRC if someone could give
-    their opinion on the concept itself.
-  - It may be because your code is too complex for all but a few people. And those people
-    may not have realized your pull request even exists. A great way to find people who
-    are qualified and care about the code you are touching is the
-    [Git Blame feature](https://help.github.com/articles/tracing-changes-in-a-file/). Simply
-    find the person touching the code you are touching before you and see if you can find
+  - It may be because of a feature freeze due to an upcoming release. During
+    this time, only bug fixes are taken into consideration. If your pull request
+    is a new feature, it will not be prioritized until the release is over. Wait
+    for release.
+  - It may be because the changes you are suggesting do not appeal to people.
+    Rather than nits and critique, which require effort and means they care
+    enough to spend time on your contribution, thundering silence is a good sign
+    of widespread (mild) dislike of a given change (because people don't assume
+    *others* won't actually like the proposal). Don't take that personally,
+    though! Instead, take another critical look at what you are suggesting
+    and see if it changes too much, is too broad, doesn't adhere to the
+    [developer notes](doc/developer-notes.md), is dangerous or insecure, is
+    messily written, etc. Identify and address any of the issues you find.
+    Then ask e.g. on IRC if someone could give their opinion on the concept
+    itself.
+  - It may be because your code is too complex for all but a few people. And
+    those people may not have realized your pull request even exists. A great
+    way to find people who are qualified and care about the code you are
+    touching is the
+    [Git Blame feature](https://help.github.com/articles/tracing-changes-in-a-file/).
+    Look up who last changed the code you are changing and see if you can find
     them and give them a nudge. Don't be incessant about the nudging though.
-  - Finally, if all else fails, ask on IRC or elsewhere for someone to give your pull request
-    a look. If you think you've been waiting an unreasonably long amount of time (month+) for
-    no particular reason (few lines changed, etc), this is totally fine. Try to return the favor
-    when someone else is asking for feedback on their code, and universe balances out.
-
+  - Finally, if all else fails, ask on IRC or elsewhere for someone to give your
+    pull request a look. If you think you've been waiting an unreasonably long
+    amount of time (month+) for no particular reason (few lines changed, etc),
+    this is totally fine. Try to return the favor when someone else is asking
+    for feedback on their code, and the universe balances out.
 
 Release Policy
 --------------
@@ -322,7 +330,7 @@ The project leader is the release manager for each Bitcoin Core release.
 Copyright
 ---------
 
-By contributing to this repository, you agree to license your work under the 
-MIT license unless specified otherwise in `contrib/debian/copyright` or at 
-the top of the file itself. Any work contributed where you are not the original 
+By contributing to this repository, you agree to license your work under the
+MIT license unless specified otherwise in `contrib/debian/copyright` or at
+the top of the file itself. Any work contributed where you are not the original
 author must contain its license header with the original author(s) and source.
