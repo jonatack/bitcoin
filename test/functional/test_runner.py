@@ -17,6 +17,7 @@ from collections import deque
 import configparser
 import datetime
 import os
+import pathlib
 import time
 import shutil
 import signal
@@ -276,12 +277,20 @@ def main():
                 test_list.append(test)
             else:
                 print("{}WARNING!{} Test '{}' not found in full test list.".format(BOLD[1], BOLD[0], test))
+        # Display the list of tests to be run, if more than one, when a user
+        # passes a filter or wildcard argument to the test runner. This provides
+        # immediate feedback on which tests will be run.
+        test_count = len(test_list)
+        if test_count > 1:
+            print("Running {} jobs: {}".format(test_count, make_tests_list(test_list)))
     elif args.extended:
         # Include extended tests
         test_list += ALL_SCRIPTS
+        print("Running extended list of {} jobs".format(len(test_list)))
     else:
         # Run base tests only
         test_list += BASE_SCRIPTS
+        print("Running base list of {} jobs".format(len(test_list)))
 
     # Remove the test cases that the user has explicitly asked to exclude.
     if args.exclude:
@@ -350,7 +359,8 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
     else:
         coverage = None
 
-    if len(test_list) > 1 and jobs > 1:
+    test_count = len(test_list)
+    if test_count > 1 and jobs > 1:
         # Populate cache
         try:
             subprocess.check_output([sys.executable, tests_dir + 'create_cache.py'] + flags + ["--tmpdir=%s/cache" % tmpdir])
@@ -371,17 +381,17 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
     test_results = []
 
     max_len_name = len(max(test_list, key=len))
-    test_count = len(test_list)
     for i in range(test_count):
         test_result, testdir, stdout, stderr = job_queue.get_next()
         test_results.append(test_result)
-        done_str = "{}/{} - {}{}{}".format(i + 1, test_count, BOLD[1], test_result.name, BOLD[0])
+        progress_str = ("{}/{}".format(i + 1, test_count)).rjust(6)
+        done_str = "{} - {}{}{}".format(progress_str, BOLD[1], test_result.name, BOLD[0])
         if test_result.status == "Passed":
-            logging.debug("%s passed, Duration: %s s" % (done_str, test_result.time))
+            logging.debug("%s passed, duration %s s" % (done_str, test_result.time))
         elif test_result.status == "Skipped":
             logging.debug("%s skipped" % (done_str))
         else:
-            print("%s failed, Duration: %s s\n" % (done_str, test_result.time))
+            print("%s failed, duration %s s\n" % (done_str, test_result.time))
             print(BOLD[1] + 'stdout:\n' + BOLD[0] + stdout + '\n')
             print(BOLD[1] + 'stderr:\n' + BOLD[0] + stderr + '\n')
             if combined_logs_len and os.path.isdir(testdir):
@@ -438,7 +448,7 @@ def print_results(test_results, max_len_name, runtime):
     status = TICK + "Passed" if all_passed else CROSS + "Failed"
     if not all_passed:
         results += RED[1]
-    results += BOLD[1] + "\n%s | %s | %s s (accumulated) \n" % ("ALL".ljust(max_len_name), status.ljust(9), time_sum) + BOLD[0]
+    results += BOLD[1] + "\n%s | %s | %s s (accumulated) \n" % ("ALL".ljust(max_len_name), status.ljust(9), str(time_sum).rjust(6)) + BOLD[0]
     if not all_passed:
         results += RED[0]
     results += "Runtime: %s s\n" % (runtime)
@@ -484,9 +494,10 @@ class TestHandler:
         if not self.jobs:
             raise IndexError('pop from empty list')
 
-        # Print remaining running jobs when all jobs have been started.
-        if not self.test_list:
-            print("Remaining jobs: [{}]".format(", ".join(j[0] for j in self.jobs)))
+        # Print remaining running jobs when all jobs have been started, if more than 3.
+        jobs_count = len(self.jobs)
+        if not self.test_list and jobs_count > 3:
+            print("Remaining {} jobs: {}".format(jobs_count, make_jobs_list(self.jobs)))
 
         dot_count = 0
         while True:
@@ -530,18 +541,18 @@ class TestHandler:
 
 class TestResult():
     def __init__(self, name, status, time):
-        self.name = name
+        self.name = filename_stem(name)
         self.status = status
         self.time = time
         self.padding = 0
 
     def sort_key(self):
         if self.status == "Passed":
-            return 0, self.name.lower()
+            return 0, self.name
         elif self.status == "Failed":
-            return 2, self.name.lower()
+            return 2, self.name
         elif self.status == "Skipped":
-            return 1, self.name.lower()
+            return 1, self.name
 
     def __repr__(self):
         if self.status == "Passed":
@@ -554,7 +565,7 @@ class TestResult():
             color = GREY
             glyph = CIRCLE
 
-        return color[1] + "%s | %s%s | %s s\n" % (self.name.ljust(self.padding), glyph, self.status.ljust(7), self.time) + color[0]
+        return color[1] + "%s | %s%s | %s s\n" % (self.name.ljust(self.padding), glyph, self.status.ljust(7), str(self.time).rjust(6)) + color[0]
 
     @property
     def was_successful(self):
@@ -582,11 +593,21 @@ def check_script_list(*, src_dir, fail_on_warn):
     python_files = set([test_file for test_file in os.listdir(script_dir) if test_file.endswith(".py")])
     missed_tests = list(python_files - set(map(lambda x: x.split()[0], ALL_SCRIPTS + NON_SCRIPTS)))
     if len(missed_tests) != 0:
-        print("%sWARNING!%s The following scripts are not being run: %s. Check the test lists in test_runner.py." % (BOLD[1], BOLD[0], str(missed_tests)))
+        print("%sWARNING!%s The following jobs are not being run: %s. "
+              "Check the test script lists in test_runner.py." %
+              (BOLD[1], BOLD[0], make_tests_list(missed_tests)))
         if fail_on_warn:
             # On CI this warning is an error to prevent merging incomplete commits into master
             sys.exit(1)
 
+def make_tests_list(tests):
+    return ", ".join(filename_stem(test) for test in tests)
+
+def make_jobs_list(jobs):
+    return ", ".join(filename_stem(job[0]) for job in jobs)
+
+def filename_stem(filename):
+    return pathlib.Path(filename).stem.lower()
 
 class RPCCoverage():
     """
