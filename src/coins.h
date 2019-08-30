@@ -6,6 +6,7 @@
 #ifndef BITCOIN_COINS_H
 #define BITCOIN_COINS_H
 
+#include <support/allocators/node_allocator.h>
 #include <compressor.h>
 #include <core_memusage.h>
 #include <memusage.h>
@@ -131,7 +132,8 @@ struct CCoinsCacheEntry
     CCoinsCacheEntry(Coin&& coin_, unsigned char flag) : coin(std::move(coin_)), flags(flag) {}
 };
 
-typedef std::unordered_map<COutPoint, CCoinsCacheEntry, SaltedOutpointHasher> CCoinsMap;
+using CCoinsMapFactory = node_allocator::UnorderedMapFactory<COutPoint, CCoinsCacheEntry, SaltedOutpointHasher>;
+using CCoinsMap = CCoinsMapFactory::ContainerType;
 
 /** Cursor for iterating over CoinsView state */
 class CCoinsViewCursor
@@ -218,10 +220,11 @@ protected:
      * declared as "const".
      */
     mutable uint256 hashBlock;
-    mutable CCoinsMap cacheCoins;
+    mutable node_allocator::MemoryResource cacheCoinsMemoryResource = CCoinsMapFactory::CreateMemoryResource();
+    mutable CCoinsMap cacheCoins = CCoinsMapFactory::CreateContainer(&cacheCoinsMemoryResource);
 
     /* Cached dynamic memory usage for the inner Coin objects. */
-    mutable size_t cachedCoinsUsage;
+    mutable size_t cachedCoinsUsage{0};
 
 public:
     CCoinsViewCache(CCoinsView *baseIn);

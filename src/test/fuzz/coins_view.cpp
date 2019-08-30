@@ -14,6 +14,7 @@
 #include <policy/policy.h>
 #include <primitives/transaction.h>
 #include <pubkey.h>
+#include <support/allocators/node_allocator.h>
 #include <test/fuzz/FuzzedDataProvider.h>
 #include <test/fuzz/fuzz.h>
 #include <test/fuzz/util.h>
@@ -113,7 +114,8 @@ FUZZ_TARGET_INIT(coins_view, initialize_coins_view)
                 random_mutable_transaction = *opt_mutable_transaction;
             },
             [&] {
-                CCoinsMap coins_map;
+                node_allocator::MemoryResource cacheCoinsMemoryResource = CCoinsMapFactory::CreateMemoryResource();
+                auto coins_map = CCoinsMapFactory::CreateContainer(&cacheCoinsMemoryResource);
                 while (fuzzed_data_provider.ConsumeBool()) {
                     CCoinsCacheEntry coins_cache_entry;
                     coins_cache_entry.flags = fuzzed_data_provider.ConsumeIntegral<unsigned char>();

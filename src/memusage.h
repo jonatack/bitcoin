@@ -18,6 +18,12 @@
 #include <unordered_map>
 #include <unordered_set>
 
+namespace node_allocator {
+
+template <typename T>
+class Allocator;
+
+}
 
 namespace memusage
 {
@@ -148,23 +154,59 @@ static inline size_t DynamicUsage(const std::shared_ptr<X>& p)
     return p ? MallocUsage(sizeof(X)) + MallocUsage(sizeof(stl_shared_counter)) : 0;
 }
 
-template<typename X>
-struct unordered_node : private X
-{
-private:
-    void* ptr;
+template <typename T>
+struct NodeSize {
+};
+
+template <typename Key, typename V, typename Hash, typename Equals, typename Allocator>
+struct NodeSize<std::unordered_map<Key, V, Hash, Equals, Allocator>> {
+    [[nodiscard]] static constexpr size_t Value()
+    {
+        // libstdc++, libc++, and MSVC implement the nodes differently. To get the correct size
+        // with the correct alignment, we can simulate that with accordingly nested std::pairs.
+        using ValueType = std::pair<const Key, V>;
+
+#if defined(_MSC_VER)
+        // list node contains 2 pointers and no hash
+        // see https://github.com/microsoft/STL/blob/main/stl/inc/unordered_map and https://github.com/microsoft/STL/blob/main/stl/inc/list
+        return sizeof(std::pair<std::pair<void*, void*>, ValueType>);
+#else
+
+#if defined(_LIBCPP_VERSION) // defined in any C++ header from libc++
+        // libc++ always stores hash and pointer in the node
+        // see https://github.com/llvm/llvm-project/blob/release/13.x/libcxx/include/__hash_table#L92
+        return sizeof(std::pair<ValueType, std::pair<size_t, void*>>);
+#else
+        // libstdc++ doesn't store hash when it's operator() is noexcept
+        // see hashtable_policy.h, struct _Hash_node https://gcc.gnu.org/onlinedocs/libstdc++/latest-doxygen/a05689.html
+        if (noexcept(std::declval<Hash>()(std::declval<const Key&>()))) {
+            return sizeof(std::pair<void*, ValueType>);
+        } else {
+            // hash is stored along ValueType, and that is wrapped with the pointer.
+            return sizeof(std::pair<void*, std::pair<ValueType, size_t>>);
+        }
+#endif
+#endif
+    }
 };
 
 template<typename X, typename Y>
 static inline size_t DynamicUsage(const std::unordered_set<X, Y>& s)
 {
-    return MallocUsage(sizeof(unordered_node<X>)) * s.size() + MallocUsage(sizeof(void*) * s.bucket_count());
+    return MallocUsage(sizeof(std::pair<X, void*>)) * s.size() + MallocUsage(sizeof(void*) * s.bucket_count());
 }
 
-template<typename X, typename Y, typename Z>
-static inline size_t DynamicUsage(const std::unordered_map<X, Y, Z>& m)
+template <typename Key, typename Value, typename Hash, typename Equals, typename Alloc>
+static inline size_t DynamicUsage(const std::unordered_map<Key, Value, Hash, Equals, Alloc>& m)
 {
-    return MallocUsage(sizeof(unordered_node<std::pair<const X, Y> >)) * m.size() + MallocUsage(sizeof(void*) * m.bucket_count());
+    if constexpr (std::is_same_v<Alloc, node_allocator::Allocator<std::pair<const Key, Value>>>) {
+        // Assumes that DynamicUsage of the MemoryResource is called separately. We don't do it here
+        // because multiple maps could use the same MemoryResource.
+        return MallocUsage(sizeof(void*) * m.bucket_count());
+    } else {
+        auto node_size = NodeSize<std::unordered_map<Key, Value, Hash, Equals, Alloc>>::Value();
+        return MallocUsage(node_size) * m.size() + MallocUsage(sizeof(void*) * m.bucket_count());
+    }
 }
 
 }
