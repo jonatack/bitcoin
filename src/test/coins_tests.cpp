@@ -609,7 +609,8 @@ void GetCoinsMapEntry(const CCoinsMap& map, CAmount& value, char& flags)
 
 void WriteCoinsViewEntry(CCoinsView& view, CAmount value, char flags)
 {
-    CCoinsMap map;
+    node_allocator::MemoryResource memory_resource;
+    auto map = MakeCCoinsMap(&memory_resource);
     InsertCoinsMapEntry(map, value, flags);
     BOOST_CHECK(view.BatchWrite(map, {}));
 }

@@ -78,6 +78,7 @@ BITCOIN_TESTS =\
   test/blockfilter_tests.cpp \
   test/blockfilter_index_tests.cpp \
   test/bloom_tests.cpp \
+  test/node_allocator_tests.cpp \
   test/bswap_tests.cpp \
   test/checkqueue_tests.cpp \
   test/coins_tests.cpp \

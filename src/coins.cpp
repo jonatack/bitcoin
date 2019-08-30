@@ -31,7 +31,12 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock)
 std::unique_ptr<CCoinsViewCursor> CCoinsViewBacked::Cursor() const { return base->Cursor(); }
 size_t CCoinsViewBacked::EstimateSize() const { return base->EstimateSize(); }
 
-CCoinsViewCache::CCoinsViewCache(CCoinsView *baseIn) : CCoinsViewBacked(baseIn), cachedCoinsUsage(0) {}
+CCoinsViewCache::CCoinsViewCache(CCoinsView *baseIn) : CCoinsViewBacked(baseIn) {}
+
+CCoinsMap MakeCCoinsMap(node_allocator::MemoryResource* memory_resource)
+{
+    return CCoinsMap{0, CCoinsMap::hasher{}, CCoinsMap::key_equal{}, CCoinsMap::allocator_type{memory_resource}};
+}
 
 size_t CCoinsViewCache::DynamicMemoryUsage() const {
     return memusage::DynamicUsage(cacheCoins) + cachedCoinsUsage;
@@ -256,7 +261,9 @@ void CCoinsViewCache::ReallocateCache()
     // Cache should be empty when we're calling this.
     assert(cacheCoins.size() == 0);
     cacheCoins.~CCoinsMap();
-    ::new (&cacheCoins) CCoinsMap();
+    cacheCoinsPool.~MemoryResource();
+    ::new (&cacheCoinsPool) node_allocator::MemoryResource();
+    ::new (&cacheCoins) CCoinsMap(0, CCoinsMap::hasher{}, CCoinsMap::key_equal{}, CCoinsMap::allocator_type{&cacheCoinsPool});
 }
 
 static const size_t MIN_TRANSACTION_OUTPUT_WEIGHT = WITNESS_SCALE_FACTOR * ::GetSerializeSize(CTxOut(), PROTOCOL_VERSION);
