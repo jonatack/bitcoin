@@ -204,7 +204,7 @@ void CreateWalletActivity::createWallet()
     if (m_create_wallet_dialog->disablePrivateKeys()) {
         flags |= WALLET_FLAG_DISABLE_PRIVATE_KEYS;
     }
-    if (m_create_wallet_dialog->blank()) {
+    if (m_create_wallet_dialog->makeBlankWallet()) {
         flags |= WALLET_FLAG_BLANK_WALLET;
     }
 
@@ -246,7 +246,7 @@ void CreateWalletActivity::create()
         Q_EMIT finished();
     });
     connect(m_create_wallet_dialog, &QDialog::accepted, [this] {
-        if (m_create_wallet_dialog->encrypt()) {
+        if (m_create_wallet_dialog->encryptWallet()) {
             askPasshprase();
         } else {
             createWallet();
