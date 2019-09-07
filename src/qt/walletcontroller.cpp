@@ -179,7 +179,7 @@ CreateWalletActivity::~CreateWalletActivity()
     delete m_passphrase_dialog;
 }
 
-void CreateWalletActivity::askPasshprase()
+void CreateWalletActivity::askPassphrase()
 {
     m_passphrase_dialog = new AskPassphraseDialog(AskPassphraseDialog::Encrypt, m_parent_widget, &m_passphrase);
     m_passphrase_dialog->show();
@@ -247,7 +247,7 @@ void CreateWalletActivity::create()
     });
     connect(m_create_wallet_dialog, &QDialog::accepted, [this] {
         if (m_create_wallet_dialog->encryptWallet()) {
-            askPasshprase();
+            askPassphrase();
         } else {
             createWallet();
         }
