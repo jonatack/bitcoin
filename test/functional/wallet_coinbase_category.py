@@ -19,41 +19,42 @@ class CoinbaseCategoryTest(BitcoinTestFramework):
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
 
-    def assert_category(self, category, address, txid, skip):
-        assert_array_result(self.nodes[0].listtransactions(skip=skip),
+    def assert_category(self, node, category, address, txid, skip):
+        assert_array_result(node.listtransactions(skip=skip),
                             {"address": address},
                             {"category": category})
-        assert_array_result(self.nodes[0].listsinceblock()["transactions"],
+        assert_array_result(node.listsinceblock()["transactions"],
                             {"address": address},
                             {"category": category})
-        assert_array_result(self.nodes[0].gettransaction(txid)["details"],
+        assert_array_result(node.gettransaction(txid)["details"],
                             {"address": address},
                             {"category": category})
 
     def run_test(self):
+        node = self.nodes[0]
         # Generate one block to an address
-        address = self.nodes[0].getnewaddress()
-        self.nodes[0].generatetoaddress(1, address)
-        hash = self.nodes[0].getbestblockhash()
-        txid = self.nodes[0].getblock(hash)["tx"][0]
+        address = node.getnewaddress()
+        node.generatetoaddress(1, address)
+        hash = node.getbestblockhash()
+        txid = node.getblock(hash)["tx"][0]
 
         # Coinbase transaction is immature after 1 confirmation
-        self.assert_category("immature", address, txid, 0)
+        self.assert_category(node, "immature", address, txid, 0)
 
         # Mine another 99 blocks on top
-        self.nodes[0].generate(99)
+        node.generate(99)
         # Coinbase transaction is still immature after 100 confirmations
-        self.assert_category("immature", address, txid, 99)
+        self.assert_category(node, "immature", address, txid, 99)
 
         # Mine one more block
-        self.nodes[0].generate(1)
+        node.generate(1)
         # Coinbase transaction is now matured, so category is "generate"
-        self.assert_category("generate", address, txid, 100)
+        self.assert_category(node, "generate", address, txid, 100)
 
         # Orphan block that paid to address
-        self.nodes[0].invalidateblock(hash)
+        node.invalidateblock(hash)
         # Coinbase transaction is now orphaned
-        self.assert_category("orphan", address, txid, 100)
+        self.assert_category(node, "orphan", address, txid, 100)
 
 if __name__ == '__main__':
     CoinbaseCategoryTest().main()
