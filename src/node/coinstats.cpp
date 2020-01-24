@@ -8,6 +8,7 @@
 #include <coins.h>
 #include <crypto/muhash.h>
 #include <hash.h>
+#include <index/coinstatsindex.h>
 #include <serialize.h>
 #include <uint256.h>
 #include <util/system.h>
@@ -91,12 +92,20 @@ static bool GetUTXOStats(CCoinsView* view, BlockManager& blockman, CCoinsStats& 
 {
     std::unique_ptr<CCoinsViewCursor> pcursor(view->Cursor());
     assert(pcursor);
-
     stats.hashBlock = pcursor->GetBestBlock();
+
+    const CBlockIndex* pindex;
     {
         LOCK(cs_main);
         assert(std::addressof(g_chainman.m_blockman) == std::addressof(blockman));
-        stats.nHeight = blockman.LookupBlockIndex(stats.hashBlock)->nHeight;
+        pindex = blockman.LookupBlockIndex(stats.hashBlock);
+    }
+
+    stats.nHeight = pindex->nHeight;
+
+    // Use CoinStatsIndex if it is available and hash_type none was requested
+    if ((stats.m_hash_type == CoinStatsHashType::MUHASH || stats.m_hash_type == CoinStatsHashType::NONE) && g_coin_stats_index) {
+        return g_coin_stats_index->LookupStats(pindex, stats);
     }
 
     PrepareHash(hash_obj, stats);
