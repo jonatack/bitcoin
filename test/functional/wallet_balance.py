@@ -107,7 +107,7 @@ class WalletTest(BitcoinTestFramework):
         # First argument of getbalance must be set to "*"
         assert_raises_rpc_error(-32, "dummy first argument must be excluded or set to \"*\"", self.nodes[1].getbalance, "")
 
-        self.log.info("Test getbalance and getunconfirmedbalance with unconfirmed inputs")
+        self.log.info("Test getbalance and getbalances.mine.untrusted_pending with unconfirmed inputs")
 
         # Before `test_balance()`, we have had two nodes with a balance of 50
         # each and then we:
@@ -158,13 +158,11 @@ class WalletTest(BitcoinTestFramework):
             # TODO: fix getbalance tracking of coin spentness depth
             assert_equal(self.nodes[0].getbalance(minconf=1), Decimal('0'))
             assert_equal(self.nodes[1].getbalance(minconf=1), Decimal('0'))
-            # getunconfirmedbalance
-            assert_equal(self.nodes[0].getunconfirmedbalance(), Decimal('60'))  # output of node 1's spend
-            assert_equal(self.nodes[0].getbalances()['mine']['untrusted_pending'], Decimal('60'))
+            # getbalances.mine.untrusted_pending
+            assert_equal(self.nodes[0].getbalances()['mine']['untrusted_pending'], Decimal('60'))  # output of node 1's spend
+            assert_equal(self.nodes[1].getbalances()['mine']['untrusted_pending'], Decimal('30') - fee_node_1)  # Doesn't include output of node 0's send since it was spent
+            # getwalletinfo.unconfirmed_balance
             assert_equal(self.nodes[0].getwalletinfo()["unconfirmed_balance"], Decimal('60'))
-
-            assert_equal(self.nodes[1].getunconfirmedbalance(), Decimal('30') - fee_node_1)  # Doesn't include output of node 0's send since it was spent
-            assert_equal(self.nodes[1].getbalances()['mine']['untrusted_pending'], Decimal('30') - fee_node_1)
             assert_equal(self.nodes[1].getwalletinfo()["unconfirmed_balance"], Decimal('30') - fee_node_1)
 
         test_balances(fee_node_1=Decimal('0.01'))
@@ -174,7 +172,7 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[0].sendrawtransaction(txs[1]['hex'])  # sending on both nodes is faster than waiting for propagation
         self.sync_all()
 
-        self.log.info("Test getbalance and getunconfirmedbalance with conflicted unconfirmed inputs")
+        self.log.info("Test getbalance and getbalances.mine.untrusted_pending with conflicted unconfirmed inputs")
         test_balances(fee_node_1=Decimal('0.02'))
 
         self.nodes[1].generatetoaddress(1, ADDRESS_WATCHONLY)
@@ -200,13 +198,13 @@ class WalletTest(BitcoinTestFramework):
 
         # check mempool transactions count for wallet unconfirmed balance after
         # dynamically loading the wallet.
-        before = self.nodes[1].getunconfirmedbalance()
+        before = self.nodes[1].getbalances()['mine']['untrusted_pending']
         dst = self.nodes[1].getnewaddress()
         self.nodes[1].unloadwallet('')
         self.nodes[0].sendtoaddress(dst, 0.1)
         self.sync_all()
         self.nodes[1].loadwallet('')
-        after = self.nodes[1].getunconfirmedbalance()
+        after = self.nodes[1].getbalances()['mine']['untrusted_pending']
         assert_equal(before + Decimal('0.1'), after)
 
         # Create 3 more wallet txs, where the last is not accepted to the
