@@ -772,33 +772,6 @@ static UniValue getbalance(const JSONRPCRequest& request)
     return ValueFromAmount(bal.m_mine_trusted + (include_watchonly ? bal.m_watchonly_trusted : 0));
 }
 
-static UniValue getunconfirmedbalance(const JSONRPCRequest &request)
-{
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    const CWallet* const pwallet = wallet.get();
-
-    if (!EnsureWalletIsAvailable(pwallet, request.fHelp)) {
-        return NullUniValue;
-    }
-
-            RPCHelpMan{"getunconfirmedbalance",
-                "DEPRECATED\nIdentical to getbalances().mine.untrusted_pending\n",
-                {},
-                RPCResult{RPCResult::Type::NUM, "", "The balance"},
-                RPCExamples{""},
-            }.Check(request);
-
-    // Make sure the results are valid at least up to the most recent block
-    // the user could have gotten from another RPC command prior to now
-    pwallet->BlockUntilSyncedToCurrentChain();
-
-    auto locked_chain = pwallet->chain().lock();
-    LOCK(pwallet->cs_wallet);
-
-    return ValueFromAmount(pwallet->GetBalance().m_mine_untrusted_pending);
-}
-
-
 static UniValue sendmany(const JSONRPCRequest& request)
 {
     std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
@@ -4272,7 +4245,6 @@ static const CRPCCommand commands[] =
     { "wallet",             "getreceivedbyaddress",             &getreceivedbyaddress,          {"address","minconf"} },
     { "wallet",             "getreceivedbylabel",               &getreceivedbylabel,            {"label","minconf"} },
     { "wallet",             "gettransaction",                   &gettransaction,                {"txid","include_watchonly","verbose"} },
-    { "wallet",             "getunconfirmedbalance",            &getunconfirmedbalance,         {} },
     { "wallet",             "getbalances",                      &getbalances,                   {} },
     { "wallet",             "getwalletinfo",                    &getwalletinfo,                 {} },
     { "wallet",             "importaddress",                    &importaddress,                 {"address","label","rescan","p2sh"} },
