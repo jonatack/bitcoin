@@ -142,8 +142,7 @@ class MultiWalletTest(BitcoinTestFramework):
         self.restart_node(0, ['-wallet=w4', '-wallet=w5', '-walletdir=' + data_dir()])
         assert_equal(set(node.listwallets()), {"w4", "w5"})
         w5 = wallet("w5")
-        w5_info = w5.getwalletinfo()
-        assert_equal(w5_info['immature_balance'], 50)
+        assert_equal(w5.getbalances()['mine']['immature'], 50)
 
         competing_wallet_dir = os.path.join(self.options.tmpdir, 'competing_walletdir')
         os.mkdir(competing_wallet_dir)
@@ -161,9 +160,8 @@ class MultiWalletTest(BitcoinTestFramework):
         # check wallet names and balances
         node.generatetoaddress(nblocks=1, address=wallets[0].getnewaddress())
         for wallet_name, wallet in zip(wallet_names, wallets):
-            info = wallet.getwalletinfo()
-            assert_equal(info['immature_balance'], 50 if wallet is wallets[0] else 0)
-            assert_equal(info['walletname'], wallet_name)
+            assert_equal(wallet.getbalances()['mine']['immature'], 50 if wallet is wallets[0] else 0)
+            assert_equal(wallet.getwalletinfo()['walletname'], wallet_name)
 
         # accessing invalid wallet fails
         assert_raises_rpc_error(-18, "Requested wallet does not exist or is not loaded", wallet_bad.getwalletinfo)

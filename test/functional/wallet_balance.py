@@ -76,7 +76,6 @@ class WalletTest(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(self.nodes[0].getbalances()['mine']['trusted'], 50)
-        assert_equal(self.nodes[0].getwalletinfo()['balance'], 50)
         assert_equal(self.nodes[1].getbalances()['mine']['trusted'], 50)
 
         assert_equal(self.nodes[0].getbalances()['watchonly']['immature'], 5000)
@@ -162,9 +161,6 @@ class WalletTest(BitcoinTestFramework):
             # getbalances.mine.untrusted_pending
             assert_equal(self.nodes[0].getbalances()['mine']['untrusted_pending'], Decimal('60'))  # output of node 1's spend
             assert_equal(self.nodes[1].getbalances()['mine']['untrusted_pending'], Decimal('30') - fee_node_1)  # Doesn't include output of node 0's send since it was spent
-            # getwalletinfo.unconfirmed_balance
-            assert_equal(self.nodes[0].getwalletinfo()["unconfirmed_balance"], Decimal('60'))
-            assert_equal(self.nodes[1].getwalletinfo()["unconfirmed_balance"], Decimal('30') - fee_node_1)
 
         test_balances(fee_node_1=Decimal('0.01'))
 
