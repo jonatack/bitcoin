@@ -109,7 +109,7 @@ class WalletTest(BitcoinTestFramework):
 
         self.log.info("Test getbalance and getbalances.mine.untrusted_pending with unconfirmed inputs")
 
-        # Before `test_balance()`, we have had two nodes with a balance of 50
+        # Before `test_balances()`, we have had two nodes with a balance of 50
         # each and then we:
         #
         # 1) Sent 40 from node A to node B with fee 0.01
@@ -120,8 +120,9 @@ class WalletTest(BitcoinTestFramework):
         # 1) As is
         # 2) With transaction 2 from above with 2x the fee
         #
-        # Prior to #16766, in this situation, the node would immediately report
-        # a balance of 30 on node B as unconfirmed and trusted.
+        # Prior to #16766 "wallet: Make IsTrusted scan parents recursively",
+        # in this situation, the node would immediately report a balance of 30
+        # on node B as unconfirmed and trusted.
         #
         # After #16766, we show that balance as unconfirmed.
         #
