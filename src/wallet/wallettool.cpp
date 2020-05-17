@@ -10,6 +10,8 @@
 
 namespace WalletTool {
 
+static const std::string PROCESS_ERROR_MSG = "Is wallet being used by another process?";
+
 // The standard wallet deleter function blocks on the validation interface
 // queue, which doesn't exist for the bitcoin-wallet. Define our own
 // deleter here.
@@ -62,7 +64,7 @@ static std::shared_ptr<CWallet> LoadWallet(const std::string& name, const fs::pa
         bool first_run;
         load_wallet_ret = wallet_instance->LoadWallet(first_run);
     } catch (const std::runtime_error&) {
-        tfm::format(std::cerr, "Error loading %s. Is wallet being used by another process?\n", name);
+        tfm::format(std::cerr, "Error loading %s. %s\n", name, PROCESS_ERROR_MSG);
         return nullptr;
     }
 
@@ -120,7 +122,7 @@ bool ExecuteWalletToolFunc(const std::string& command, const std::string& name)
         }
         bilingual_str error;
         if (!WalletBatch::VerifyEnvironment(path, error)) {
-            tfm::format(std::cerr, "%s\nError loading %s. Is wallet being used by other process?\n", error.original, name);
+            tfm::format(std::cerr, "%s\nError loading %s. %s\n", error.original, name, PROCESS_ERROR_MSG);
             return false;
         }
         std::shared_ptr<CWallet> wallet_instance = LoadWallet(name, path);
