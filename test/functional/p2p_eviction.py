@@ -12,9 +12,9 @@ address/netgroup since in the current framework, all peers are connecting from
 the same local address. See Issue #14210 for more info.
 
 Therefore, this test is limited to the remaining protection criteria:
-1.) Protect 4 nodes having sent us a block most recently
-2.) Protect 4 nodes having sent us a transaction most recently
-3.) Protect 8 nodes with the smallest minimum ping
+1. Protect 4 nodes that most recently sent us blocks.
+2. Protect 4 nodes that most recently sent us transactions.
+3. Protect the 8 nodes with the lowest minimum ping time.
 """
 
 import time
@@ -40,13 +40,19 @@ class P2PEvict(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
-        # The choice of maxconnections=32 results in a maximum of 21 inbound connections
-        # (32 - 10 outbound - 1 feeler). 20 inbound peers are protected from eviction:
-        # 4 by netgroup, 4 that sent us blocks, 4 that sent us transactions and 8 via lowest ping time
+        # The choice of 32 max connections results in a maximum of
+        # (32 - 10 outbound - 1 feeler) = 21 inbound connections.
+        #
+        # 20 inbound peers are protected from eviction:
+        #  4 by netgroup
+        #  4 that recently sent us blocks
+        #  4 that recently sent us transactions
+        #  8 having the lowest minimum ping
         self.extra_args = [['-maxconnections=32']]
 
-    def run_test(self):
+    def setup_test_peers(self):
         self.protected_peers = set() # peers that we expect to be protected from eviction
+        self.slow_pinging_peers = [4, 5, 6, 7, 8]
         current_peer = -1
         node = self.nodes[0]
         node.generatetoaddress(101, node.get_deterministic_priv_key().address)
@@ -57,15 +63,15 @@ class P2PEvict(BitcoinTestFramework):
             current_peer += 1
             block_peer.sync_with_ping(timeout=5)
             best_block = node.getbestblockhash()
-            tip = int(best_block, 16)
             best_block_time = node.getblock(best_block)['time']
-            block = create_block(tip, create_coinbase(node.getblockcount() + 1), best_block_time + 1)
+            tip = int(best_block, 16)
+            block = create_block(hashprev=tip, coinbase=create_coinbase(node.getblockcount() + 1), ntime=best_block_time + 1)
             block.solve()
-            block_peer.send_blocks_and_test([block], node, success=True)
+            block_peer.send_blocks_and_test(blocks=[block], node=node, success=True)
             self.protected_peers.add(current_peer)
 
         self.log.info("Create 5 slow-pinging peers, making them eviction candidates")
-        for _ in range(5):
+        for _ in self.slow_pinging_peers:
             node.add_p2p_connection(SlowP2PInterface())
             current_peer += 1
 
@@ -102,7 +108,7 @@ class P2PEvict(BitcoinTestFramework):
         peerinfo = node.getpeerinfo()
         pings = [[0 for i in range(2)] for j in range(len(node.p2ps))]
 
-        self.log.info("Create peer that triggers the eviction mechanism")
+        self.log.info("Create a 22nd peer that triggers the eviction mechanism")
         node.add_p2p_connection(SlowP2PInterface())
 
         # Usually the 8 fast peers are protected. In rare case of unreliable pings,
@@ -111,7 +117,7 @@ class P2PEvict(BitcoinTestFramework):
             pings[i][0] = i
             pings[i][1] = peerinfo[i]['minping'] if 'minping' in peerinfo[i] else 1000000
 
-        sorted_pings = sorted(pings, key = lambda x:x[1])
+        sorted_pings = sorted(pings, key = lambda x:x[1])  # sort by increasing min ping time
 
         for i in range(8):
             self.protected_peers.add(sorted_pings[i][0])
@@ -124,13 +130,19 @@ class P2PEvict(BitcoinTestFramework):
             if(node.p2ps[i].is_connected == False ) :
                 self.evicted_peers.append(i)
 
-        self.log.info("Test that one peer was evicted")
+    def run_test(self):
+        self.setup_test_peers()
+
+        self.log.info("Test that one peer was evicted and was one of the slow-pinging peers")
         self.log.debug("{} evicted peer: {}".format(len(self.evicted_peers), set(self.evicted_peers)))
         assert_equal(len(self.evicted_peers), 1)
+        assert self.evicted_peers[0] in self.slow_pinging_peers
 
         self.log.info("Test that no peer expected to be protected was evicted")
         self.log.debug("{} protected peers: {}".format(len(self.protected_peers), self.protected_peers))
+        assert_equal(len(self.protected_peers), 21 - len(self.slow_pinging_peers))
         assert self.evicted_peers[0] not in self.protected_peers
+
 
 if __name__ == '__main__':
     P2PEvict().main()
