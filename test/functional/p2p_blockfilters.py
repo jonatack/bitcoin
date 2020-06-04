@@ -48,8 +48,8 @@ class CompactFiltersTest(BitcoinTestFramework):
         self.rpc_timeout = 480
         self.num_nodes = 2
         self.extra_args = [
-            ["-blockfilterindex", "-peerblockfilters"],
-            ["-blockfilterindex"],
+            ["-blockfilterindex=basic", "-peerblockfilters"],
+            ["-blockfilterindex=basic", "-peerblockfilters=0"],
         ]
 
     def run_test(self):
