@@ -53,6 +53,14 @@ class CompactFiltersTest(BitcoinTestFramework):
         ]
 
     def run_test(self):
+        self.log.info('Test starting node with blockfilterindex=0 and peerblockfilters=1 raises init error')
+        err_msg = 'Error: Cannot set -peerblockfilters without -blockfilterindex.'
+        self.nodes[0].assert_start_raises_init_error(['-blockfilterindex=0', '-peerblockfilters'], err_msg)
+
+        self.log.info('Test starting node with unknown blockfilterindex type raises init error')
+        err_msg = 'Error: Unknown -blockfilterindex value foo.'
+        self.nodes[0].assert_start_raises_init_error(['-blockfilterindex=foo', '-peerblockfilters'], err_msg)
+
         # Node 0 supports COMPACT_FILTERS, node 1 does not.
         node0 = self.nodes[0].add_p2p_connection(CFiltersClient())
         node1 = self.nodes[1].add_p2p_connection(CFiltersClient())
