@@ -63,7 +63,20 @@ static void BlockFilterGetHash(benchmark::Bench& bench)
         block_filter.GetHash();
     });
 }
+
+static void GCSFilterDecodeChecked(benchmark::Bench& bench)
+{
+    auto elements = GenerateGCSTestElements();
+
+    GCSFilter filter({0, 0, BASIC_FILTER_P, BASIC_FILTER_M}, elements);
+    auto encoded = filter.GetEncoded();
+
+    bench.unit("elem").run([&] {
+        GCSFilter filter({0, 0, BASIC_FILTER_P, BASIC_FILTER_M}, encoded, /*filter_checked=*/true);
+    });
+}
 BENCHMARK(BlockFilterGetHash);
 BENCHMARK(GCSFilterConstruct);
 BENCHMARK(GCSFilterDecode);
+BENCHMARK(GCSFilterDecodeChecked);
 BENCHMARK(GCSFilterMatch);
