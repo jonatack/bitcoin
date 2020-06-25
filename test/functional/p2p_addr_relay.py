@@ -51,7 +51,7 @@ class AddrTest(BitcoinTestFramework):
 
         self.log.info('Send too-large addr message')
         msg.addrs = ADDRS * 101
-        with self.nodes[0].assert_debug_log(['addr message size = 1010']):
+        with self.nodes[0].assert_debug_log(['Misbehaving', 'addr message size = 1010']):
             addr_source.send_and_ping(msg)
 
         self.log.info('Check that addr message content is relayed and added to addrman')
@@ -65,6 +65,11 @@ class AddrTest(BitcoinTestFramework):
             addr_source.send_and_ping(msg)
             self.nodes[0].setmocktime(int(time.time()) + 30 * 60)
             addr_receiver.sync_with_ping()
+
+        self.log.info('Send addr message at data size limit')
+        msg.addrs = ADDRS * 100
+        with self.nodes[0].assert_debug_log(['received: addr (30003 bytes) peer=0']):
+            addr_source.send_and_ping(msg)
 
 
 if __name__ == '__main__':
