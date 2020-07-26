@@ -10,8 +10,8 @@
 #ifndef BITCOIN_PROTOCOL_H
 #define BITCOIN_PROTOCOL_H
 
-#include <primitives/transaction.h>
 #include <netaddress.h>
+#include <primitives/transaction.h>
 #include <serialize.h>
 #include <uint256.h>
 #include <version.h>
@@ -430,6 +430,13 @@ public:
 
     std::string GetCommand() const;
     std::string ToString() const;
+
+    bool IsMsgTx() const;
+    bool IsMsgWtx() const;
+    bool IsMsgWitnessTx() const;
+
+    bool IsMsgTxOrMsgWtx() const;
+    bool IsTxMsgValid() const;
 
     int type;
     uint256 hash;

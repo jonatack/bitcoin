@@ -170,6 +170,15 @@ bool operator<(const CInv& a, const CInv& b)
     return (a.type < b.type || (a.type == b.type && a.hash < b.hash));
 }
 
+/** Single-message boolean helper methods */
+bool CInv::IsMsgTx()         const { return type == MSG_TX; }
+bool CInv::IsMsgWtx()        const { return type == MSG_WTX; }
+bool CInv::IsMsgWitnessTx()  const { return type == MSG_WITNESS_TX; }
+
+/** Combined-message boolean helper methods */
+bool CInv::IsMsgTxOrMsgWtx() const { return (type == MSG_TX || type == MSG_WTX); }
+bool CInv::IsTxMsgValid()    const { return (type == MSG_TX || type == MSG_WTX || type == MSG_WITNESS_TX); }
+
 std::string CInv::GetCommand() const
 {
     std::string cmd;
@@ -244,6 +253,6 @@ std::vector<std::string> serviceFlagsToStr(uint64_t flags)
 
 GenTxid ToGenTxid(const CInv& inv)
 {
-    assert(inv.type == MSG_TX || inv.type == MSG_WITNESS_TX || inv.type == MSG_WTX);
-    return {inv.type == MSG_WTX, inv.hash};
+    assert(inv.IsTxMsgValid());
+    return {inv.IsMsgWtx(), inv.hash};
 }

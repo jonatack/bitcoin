@@ -1445,9 +1445,9 @@ bool static AlreadyHave(const CInv& inv, const CTxMemPool& mempool) EXCLUSIVE_LO
 
             {
                 LOCK(g_cs_orphans);
-                if (inv.type != MSG_WTX && mapOrphanTransactions.count(inv.hash)) {
+                if (!inv.IsMsgWtx() && mapOrphanTransactions.count(inv.hash)) {
                     return true;
-                } else if (inv.type == MSG_WTX && g_orphans_by_wtxid.count(inv.hash)) {
+                } else if (inv.IsMsgWtx() && g_orphans_by_wtxid.count(inv.hash)) {
                     return true;
                 }
             }
@@ -1457,8 +1457,7 @@ bool static AlreadyHave(const CInv& inv, const CTxMemPool& mempool) EXCLUSIVE_LO
                 if (g_recent_confirmed_transactions->contains(inv.hash)) return true;
             }
 
-            const bool by_wtxid = (inv.type == MSG_WTX);
-            return recentRejects->contains(inv.hash) || mempool.exists(inv.hash, by_wtxid);
+            return recentRejects->contains(inv.hash) || mempool.exists(inv.hash, inv.IsMsgWtx());
         }
     case MSG_BLOCK:
     case MSG_WITNESS_BLOCK:
@@ -1719,7 +1718,7 @@ void static ProcessGetData(CNode& pfrom, const CChainParams& chainparams, CConnm
     // Process as many TX items from the front of the getdata queue as
     // possible, since they're common and it's efficient to batch process
     // them.
-    while (it != pfrom.vRecvGetData.end() && (it->type == MSG_TX || it->type == MSG_WITNESS_TX || it->type == MSG_WTX)) {
+    while (it != pfrom.vRecvGetData.end() && it->IsTxMsgValid()) {
         if (interruptMsgProc) return;
         // The send buffer provides backpressure. If there's no space in
         // the buffer, pause processing until the next call.
@@ -1732,10 +1731,10 @@ void static ProcessGetData(CNode& pfrom, const CChainParams& chainparams, CConnm
             continue;
         }
 
-        CTransactionRef tx = FindTxForGetData(pfrom, inv.hash, inv.type == MSG_WTX, mempool_req, now);
+        CTransactionRef tx = FindTxForGetData(pfrom, inv.hash, inv.IsMsgWtx(), mempool_req, now);
         if (tx) {
             // WTX and WITNESS_TX imply we serialize with witness
-            int nSendFlags = (inv.type == MSG_TX ? SERIALIZE_TRANSACTION_NO_WITNESS : 0);
+            int nSendFlags = (inv.IsMsgTx() ? SERIALIZE_TRANSACTION_NO_WITNESS : 0);
             connman.PushMessage(&pfrom, msgMaker.Make(nSendFlags, NetMsgType::TX, *tx));
             mempool.RemoveUnbroadcastTx(tx->GetHash());
             // As we're going to send tx, make sure its unconfirmed parents are made requestable.
@@ -2656,15 +2655,15 @@ void ProcessMessage(
             // Note that orphan parent fetching always uses MSG_TX GETDATAs regardless of the wtxidrelay setting.
             // This is fine as no INV messages are involved in that process.
             if (State(pfrom.GetId())->m_wtxid_relay) {
-                if (inv.type == MSG_TX) continue;
+                if (inv.IsMsgTx()) continue;
             } else {
-                if (inv.type == MSG_WTX) continue;
+                if (inv.IsMsgWtx()) continue;
             }
 
             bool fAlreadyHave = AlreadyHave(inv, mempool);
             LogPrint(BCLog::NET, "got inv: %s  %s peer=%d\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom.GetId());
 
-            if (inv.type == MSG_TX) {
+            if (inv.IsMsgTx()) {
                 inv.type |= nFetchFlags;
             }
 
@@ -2938,7 +2937,7 @@ void ProcessMessage(
 
         TxValidationState state;
 
-        for (uint256 hash : {txid, wtxid}) {
+        for (const uint256& hash : {txid, wtxid}) {
             nodestate->m_tx_download.m_tx_announced.erase(hash);
             nodestate->m_tx_download.m_tx_in_flight.erase(hash);
             EraseTxRequest(hash);
@@ -3696,7 +3695,7 @@ void ProcessMessage(
         vRecv >> vInv;
         if (vInv.size() <= MAX_PEER_TX_IN_FLIGHT + MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
             for (CInv &inv : vInv) {
-                if (inv.type == MSG_TX || inv.type == MSG_WITNESS_TX || inv.type == MSG_WTX) {
+                if (inv.IsTxMsgValid()) {
                     // If we receive a NOTFOUND message for a txid we requested, erase
                     // it from our data structures for this peer.
                     auto in_flight_it = state->m_tx_download.m_tx_in_flight.find(inv.hash);
