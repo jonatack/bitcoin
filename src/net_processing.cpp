@@ -2976,7 +2976,7 @@ void ProcessMessage(
         if (!AlreadyHave(CInv(MSG_WTX, wtxid), mempool) &&
             AcceptToMemoryPool(mempool, state, ptx, &lRemovedTxn, false /* bypass_limits */, 0 /* nAbsurdFee */)) {
             mempool.check(&::ChainstateActive().CoinsTip());
-            RelayTransaction(tx.GetHash(), tx.GetWitnessHash(), connman);
+            RelayTransaction(txid, wtxid, connman);
             for (unsigned int i = 0; i < tx.vout.size(); i++) {
                 auto it_by_prev = mapOrphanTransactionsByPrev.find(COutPoint(txid, i));
                 if (it_by_prev != mapOrphanTransactionsByPrev.end()) {
@@ -2990,7 +2990,7 @@ void ProcessMessage(
 
             LogPrint(BCLog::MEMPOOL, "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)\n",
                 pfrom.GetId(),
-                tx.GetHash().ToString(),
+                txid.ToString(),
                 mempool.size(), mempool.DynamicMemoryUsage() / 1000);
 
             // Recursively process any orphan transactions that depended on this one
@@ -3028,15 +3028,15 @@ void ProcessMessage(
                     LogPrint(BCLog::MEMPOOL, "mapOrphan overflow, removed %u tx\n", nEvicted);
                 }
             } else {
-                LogPrint(BCLog::MEMPOOL, "not keeping orphan with rejected parents %s\n",tx.GetHash().ToString());
+                LogPrint(BCLog::MEMPOOL, "not keeping orphan with rejected parents %s\n", txid.ToString());
                 // We will continue to reject this tx since it has rejected
                 // parents so avoid re-requesting it from other peers.
                 // Here we add both the txid and the wtxid, as we know that
                 // regardless of what witness is provided, we will not accept
                 // this, so we don't need to allow for redownload of this txid
                 // from any of our non-wtxidrelay peers.
-                recentRejects->insert(tx.GetHash());
-                recentRejects->insert(tx.GetWitnessHash());
+                recentRejects->insert(txid);
+                recentRejects->insert(wtxid);
             }
         } else {
             if (state.GetResult() != TxValidationResult::TX_WITNESS_STRIPPED) {
@@ -3054,7 +3054,7 @@ void ProcessMessage(
                 // for concerns around weakening security of unupgraded nodes
                 // if we start doing this too early.
                 assert(recentRejects);
-                recentRejects->insert(tx.GetWitnessHash());
+                recentRejects->insert(wtxid);
                 // If the transaction failed for TX_INPUTS_NOT_STANDARD,
                 // then we know that the witness was irrelevant to the policy
                 // failure, since this check depends only on the txid
@@ -3063,8 +3063,8 @@ void ProcessMessage(
                 // processing of this transaction in the event that child
                 // transactions are later received (resulting in
                 // parent-fetching by txid via the orphan-handling logic).
-                if (state.GetResult() == TxValidationResult::TX_INPUTS_NOT_STANDARD && tx.GetWitnessHash() != tx.GetHash()) {
-                    recentRejects->insert(tx.GetHash());
+                if (state.GetResult() == TxValidationResult::TX_INPUTS_NOT_STANDARD && wtxid != txid) {
+                    recentRejects->insert(txid);
                 }
                 if (RecursiveDynamicUsage(*ptx) < 100000) {
                     AddToCompactExtraTransactions(ptx);
@@ -3078,11 +3078,11 @@ void ProcessMessage(
                 // if they were already in the mempool,
                 // allowing the node to function as a gateway for
                 // nodes hidden behind it.
-                if (!mempool.exists(tx.GetHash())) {
-                    LogPrintf("Not relaying non-mempool transaction %s from forcerelay peer=%d\n", tx.GetHash().ToString(), pfrom.GetId());
+                if (!mempool.exists(txid)) {
+                    LogPrintf("Not relaying non-mempool transaction %s from forcerelay peer=%d\n", txid.ToString(), pfrom.GetId());
                 } else {
-                    LogPrintf("Force relaying tx %s from peer=%d\n", tx.GetHash().ToString(), pfrom.GetId());
-                    RelayTransaction(tx.GetHash(), tx.GetWitnessHash(), connman);
+                    LogPrintf("Force relaying tx %s from peer=%d\n", txid.ToString(), pfrom.GetId());
+                    RelayTransaction(txid, wtxid, connman);
                 }
             }
         }
@@ -3108,7 +3108,7 @@ void ProcessMessage(
         // regardless of false positives.
 
         if (state.IsInvalid()) {
-            LogPrint(BCLog::MEMPOOLREJ, "%s from peer=%d was not accepted: %s\n", tx.GetHash().ToString(),
+            LogPrint(BCLog::MEMPOOLREJ, "%s from peer=%d was not accepted: %s\n", txid.ToString(),
                 pfrom.GetId(),
                 state.ToString());
             MaybePunishNodeForTx(pfrom.GetId(), state);
