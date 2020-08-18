@@ -15,8 +15,14 @@ from test_framework.util import (
 class WalletGroupTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
-        self.num_nodes = 4
-        self.extra_args = [[], [], ['-avoidpartialspends'], ["-maxapsfee=0.00002"]]
+        self.num_nodes = 5
+        self.extra_args = [
+            [],
+            [],
+            ["-avoidpartialspends"],
+            ["-maxapsfee=0.00002719"],
+            ["-maxapsfee=0.00002720"],
+        ]
         self.rpc_timeout = 480
 
     def skip_test_if_missing_module(self):
@@ -122,6 +128,19 @@ class WalletGroupTest(BitcoinTestFramework):
         # tx5 should have 3 inputs (1.0, 1.0, 1.0) and 2 outputs
         assert_equal(3, len(tx5["vin"]))
         assert_equal(2, len(tx4["vout"]))
+
+        # Test wallet option maxapsfee with node 4, which sets maxapsfee
+        # 1 sat higher, crossing the threshold from non-grouped to grouped.
+        addr_aps3 = self.nodes[4].getnewaddress()
+        [self.nodes[0].sendtoaddress(addr_aps3, 1.0) for _ in range(5)]
+        self.nodes[0].generate(1)
+        self.sync_all()
+        with self.nodes[4].assert_debug_log(['Fee non-grouped = 5520, grouped = 8240, using grouped']):
+            txid6 = self.nodes[4].sendtoaddress(self.nodes[0].getnewaddress(), 2.95)
+        tx6 = self.nodes[4].getrawtransaction(txid6, True)
+        # tx6 should have 5 inputs and 2 outputs
+        assert_equal(5, len(tx6["vin"]))
+        assert_equal(2, len(tx6["vout"]))
 
         # Empty out node2's wallet
         self.nodes[2].sendtoaddress(address=self.nodes[0].getnewaddress(), amount=self.nodes[2].getbalance(), subtractfeefromamount=True)
