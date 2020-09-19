@@ -41,6 +41,8 @@ static const bool DEFAULT_NAMED=false;
 static const int CONTINUE_EXECUTION=-1;
 static const std::string ONION{".onion"};
 static const size_t ONION_LEN{ONION.size()};
+static const std::vector<std::string> CONN_TYPES{" in", "out", "man", "flr", "blk", "adr"};
+static const uint8_t CONN_TYPES_SIZE{uint8_t(CONN_TYPES.size())};
 
 /** Default number of blocks to generate for RPC generatetoaddress. */
 static const std::string DEFAULT_NBLOCKS = "1";
@@ -333,6 +335,7 @@ private:
         int id;
         int mapped_as;
         int version;
+        uint8_t conn_type;
         int64_t conn_time;
         int64_t last_blck;
         int64_t last_recv;
@@ -361,6 +364,12 @@ private:
         if (gArgs.GetChainName() == CBaseChainParams::TESTNET) return " testnet";
         if (gArgs.GetChainName() == CBaseChainParams::REGTEST) return " regtest";
         return "";
+    }
+    std::string ConnTypeToString(uint8_t conn_type, bool is_block_relay)
+    {
+        if (conn_type >= CONN_TYPES_SIZE) return ""; // out of bounds
+        if (is_block_relay && conn_type == 0) return "bin"; // inbound block-relay-only
+        return CONN_TYPES.at(conn_type);
     }
 public:
     const int ID_PEERINFO = 0;
@@ -435,6 +444,7 @@ public:
                 const int peer_id{peer["id"].get_int()};
                 const int version{peer["version"].get_int()};
                 const std::string sub_version{peer["subver"].get_str()};
+                const uint8_t conn_type{uint8_t(peer["conn_type"].get_int())};
                 const int64_t conn_time{peer["conntime"].get_int64()};
                 const int64_t last_blck{peer["last_block"].get_int64()};
                 const int64_t last_recv{peer["lastrecv"].get_int64()};
@@ -442,7 +452,7 @@ public:
                 const int64_t last_trxn{peer["last_transaction"].get_int64()};
                 const double min_ping{peer["minping"].isNull() ? -1 : peer["minping"].get_real()};
                 const double ping{peer["pingtime"].isNull() ? -1 : peer["pingtime"].get_real()};
-                peers.push_back({peer_id, mapped_as, version, conn_time, last_blck, last_recv, last_send, last_trxn, min_ping, ping, addr, sub_version, net_type, is_block_relay, !is_inbound});
+                peers.push_back({peer_id, mapped_as, version, conn_type, conn_time, last_blck, last_recv, last_send, last_trxn, min_ping, ping, addr, sub_version, net_type, is_block_relay, !is_inbound});
                 max_peer_id_length = std::max(ToString(peer_id).length(), max_peer_id_length);
                 max_addr_length = std::max(addr.length() + 1, max_addr_length);
                 is_asmap_on |= (mapped_as != 0);
@@ -455,15 +465,14 @@ public:
         // Report detailed peer connections list sorted by direction and minimum ping time.
         if (DetailsRequested() && !peers.empty()) {
             std::sort(peers.begin(), peers.end());
-            result += "Peer connections sorted by direction and min ping\n<-> relay   net  mping   ping send recv  txn  blk    age ";
+            result += "Peer connections sorted by direction and min ping\n<->    net  mping   ping send recv  txn  blk    age ";
             if (is_asmap_on) result += " asmap ";
             result += strprintf("%*s %-*s%s\n", max_peer_id_length, "id", IsAddressSelected() ? max_addr_length : 0, IsAddressSelected() ? "address" : "", IsVersionSelected() ? "version" : "");
             for (const Peer& peer : peers) {
                 std::string version{ToString(peer.version) + peer.sub_version};
                 result += strprintf(
-                    "%3s %5s %5s%7s%7s%5s%5s%5s%5s%7s%*i %*s %-*s%s\n",
-                    peer.is_outbound ? "out" : "in",
-                    peer.is_block_relay ? "block" : "full",
+                    "%3s  %5s%7s%7s%5s%5s%5s%5s%7s%*i %*s %-*s%s\n",
+                    ConnTypeToString(peer.conn_type, peer.is_block_relay),
                     NetTypeEnumToString(peer.net_type),
                     peer.min_ping == -1 ? "" : ToString(round(1000 * peer.min_ping)),
                     peer.ping == -1 ? "" : ToString(round(1000 * peer.ping)),
@@ -480,7 +489,7 @@ public:
                     IsAddressSelected() ? peer.addr : "",
                     IsVersionSelected() && version != "0" ? version : "");
             }
-            result += "                    ms     ms  sec  sec  min  min    min\n\n";
+            result += "               ms     ms  sec  sec  min  min    min\n\n";
         }
 
         // Report peer connection totals by type.
