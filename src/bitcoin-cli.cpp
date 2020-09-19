@@ -455,7 +455,7 @@ public:
         // Report detailed peer connections list sorted by direction and minimum ping time.
         if (DetailsRequested() && !peers.empty()) {
             std::sort(peers.begin(), peers.end());
-            result += "Peer connections sorted by direction and min ping\n<-> relay   net mping   ping send recv  txn  blk uptime ";
+            result += "Peer connections sorted by direction and min ping\n<-> relay   net mping   ping send recv  txn  blk    age ";
             if (is_asmap_on) result += " asmap ";
             result += strprintf("%*s %-*s%s\n", max_peer_id_length, "id", IsAddressSelected() ? max_addr_length : 0, IsAddressSelected() ? "address" : "", IsVersionSelected() ? "version" : "");
             for (const Peer& peer : peers) {
