@@ -455,13 +455,13 @@ public:
         // Report detailed peer connections list sorted by direction and minimum ping time.
         if (DetailsRequested() && !peers.empty()) {
             std::sort(peers.begin(), peers.end());
-            result += "Peer connections sorted by direction and min ping\n<-> relay   net mping   ping send recv  txn  blk    age ";
+            result += "Peer connections sorted by direction and min ping\n<-> relay   net  mping   ping send recv  txn  blk    age ";
             if (is_asmap_on) result += " asmap ";
             result += strprintf("%*s %-*s%s\n", max_peer_id_length, "id", IsAddressSelected() ? max_addr_length : 0, IsAddressSelected() ? "address" : "", IsVersionSelected() ? "version" : "");
             for (const Peer& peer : peers) {
                 std::string version{ToString(peer.version) + peer.sub_version};
                 result += strprintf(
-                    "%3s %5s %5s%6s%7s%5s%5s%5s%5s%7s%*i %*s %-*s%s\n",
+                    "%3s %5s %5s%7s%7s%5s%5s%5s%5s%7s%*i %*s %-*s%s\n",
                     peer.is_outbound ? "out" : "in",
                     peer.is_block_relay ? "block" : "full",
                     NetTypeEnumToString(peer.net_type),
@@ -480,7 +480,7 @@ public:
                     IsAddressSelected() ? peer.addr : "",
                     IsVersionSelected() && version != "0" ? version : "");
             }
-            result += "                   ms     ms  sec  sec  min  min    min\n\n";
+            result += "                    ms     ms  sec  sec  min  min    min\n\n";
         }
 
         // Report peer connection totals by type.
