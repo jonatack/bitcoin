@@ -54,7 +54,7 @@ TxRequestTracker::Erase(typename Index::index<Tag>::type::iterator it)
     auto peerit = m_peerinfo.find(it->m_peer);
     peerit->second.m_requested -= it->GetState() == State::REQUESTED;
     if (--peerit->second.m_total == 0) m_peerinfo.erase(peerit);
-    // As it may possibly the last-sorted Entry for a given txhash, propagate its pertxhash
+    // As it may possibly be the last-sorted Entry for a given txhash, propagate its per-txhash
     // flags to its predecessor (if it belongs to the same txhash).
     auto bytxhashit = m_index.project<ByTxHash>(it);
     if (bytxhashit != m_index.get<ByTxHash>().begin() &&
@@ -220,7 +220,7 @@ void TxRequestTracker::ReceivedInv(uint64_t peer, const GenTxid& gtxid, bool pre
     // Find last entry, and extract per_txhash information from it.
     uint8_t per_txhash = 0;
     typename TxRequestTracker::Index::index<ByTxHash>::type::iterator it_last = m_index.get<ByTxHash>().end();
-    if (m_index.size()) {
+    if (Size()) {
         it_last = std::prev(m_index.get<ByTxHash>().lower_bound(EntryTxHash{gtxid.GetHash(), State::TOO_LARGE, 0}));
         if (it_last->m_txhash == gtxid.GetHash()) {
             per_txhash |= it_last->m_per_txhash;
@@ -230,7 +230,7 @@ void TxRequestTracker::ReceivedInv(uint64_t peer, const GenTxid& gtxid, bool pre
     }
 
     // Determine whether the new announcement's Entry will get the first marker, and update
-    // the per_txhash information to be stored (but not that per_txhash isn't actually stored
+    // the per_txhash information to be stored (but note that per_txhash isn't actually stored
     // until after the emplace below succeeds).
     bool first = false;
     if (!overloaded) {
@@ -317,7 +317,7 @@ std::vector<GenTxid> TxRequestTracker::GetRequestable(uint64_t peer, std::chrono
     // Return them, sorted by sequence number.
     std::sort(selected.begin(), selected.end());
     std::vector<GenTxid> ret;
-    for (auto& item : selected) {
+    for (const auto& item : selected) {
         ret.emplace_back(item.second->m_is_wtxid, item.second->m_txhash);
     }
     return ret;
@@ -381,39 +381,38 @@ void TxRequestTracker::SanityCheck() const
         entry.m_or_all_per_txhash |= a.m_per_txhash;
     }
     for (auto& entry : table) {
+        Counts& c{entry.second};
         // Cannot have only COMPLETED peers (txid should have been deleted)
-        assert(entry.second.m_candidate_delayed + entry.second.m_candidate_ready + entry.second.m_candidate_best +
-            entry.second.m_requested > 0);
+        assert(c.m_candidate_delayed + c.m_candidate_ready + c.m_candidate_best + c.m_requested > 0);
         // Can have at most 1 CANDIDATE_BEST/REQUESTED peer
-        assert(entry.second.m_candidate_best + entry.second.m_requested <= 1);
+        assert(c.m_candidate_best + c.m_requested <= 1);
         // If there are any CANDIDATE_READY entries, there must be exactly one CANDIDATE_BEST or REQUESTED entry.
-        if (entry.second.m_candidate_ready > 0) {
-            assert(entry.second.m_candidate_best + entry.second.m_requested == 1);
+        if (c.m_candidate_ready > 0) {
+            assert(c.m_candidate_best + c.m_requested == 1);
         }
         // If there is both a CANDIDATE_READY and a CANDIDATE_BEST entry, the CANDIDATE_BEST one must be at least
         // as good as the best CANDIDATE_READY.
-        if (entry.second.m_candidate_ready && entry.second.m_candidate_best) {
-            assert(entry.second.m_priority_candidate_best <= entry.second.m_priority_best_candidate_ready);
+        if (c.m_candidate_ready && c.m_candidate_best) {
+            assert(c.m_priority_candidate_best <= c.m_priority_best_candidate_ready);
         }
         // Detect duplicate (peer, txid) entries
-        std::sort(entry.second.m_peers.begin(), entry.second.m_peers.end());
-        assert(std::adjacent_find(entry.second.m_peers.begin(), entry.second.m_peers.end()) ==
-            entry.second.m_peers.end());
+        std::sort(c.m_peers.begin(), c.m_peers.end());
+        assert(std::adjacent_find(c.m_peers.begin(), c.m_peers.end()) == c.m_peers.end());
         // Verify all per_txhash flags.
         uint8_t expected_per_txhash = 0;
-        if (entry.second.m_any_preferred_first || entry.second.m_requested) {
+        if (c.m_any_preferred_first || c.m_requested) {
             expected_per_txhash |= TXHASHINFO_NO_MORE_PREFERRED_FIRST;
         }
-        if (entry.second.m_any_nonpreferred_first || entry.second.m_requested) {
+        if (c.m_any_nonpreferred_first || c.m_requested) {
             expected_per_txhash |= TXHASHINFO_NO_MORE_NONPREFERRED_FIRST;
         }
         // All expected flags must be present, but there can be more. If a node went from REQUESTED to COMPLETED,
         // or was deleted, our expected_per_txhash may miss the relevant bits.
-        assert((expected_per_txhash & ~entry.second.m_or_all_per_txhash) == 0);
+        assert((expected_per_txhash & ~c.m_or_all_per_txhash) == 0);
         // No entry can have flags that are a superset of the actual ones (they're always ORed into the actual one).
         auto it_last = std::prev(m_index.get<ByTxHash>().lower_bound(EntryTxHash{entry.first, State::TOO_LARGE, 0}));
         assert(it_last->m_txhash == entry.first);
-        assert(entry.second.m_or_all_per_txhash == it_last->m_per_txhash);
+        assert(c.m_or_all_per_txhash == it_last->m_per_txhash);
     }
 }
 

@@ -78,11 +78,11 @@
  *
  * The data structure maintains a collection of entries:
  *
- * - CANDIDATE entries represent transactions that were announced by peer, and become available for download after
- *   their reqtime has passed.
+ * - CANDIDATE entries represent transactions that were announced by a peer and that become available for download
+ *   after their reqtime has passed.
  *
- * - REQUESTED entries represent transactions that have been requested, and we're awaiting a response for from that
- *   peer. Theie exptime value determines when the request times out.
+ * - REQUESTED entries represent transactions that have been requested, and which we're awaiting a response for from
+ *   that peer. Their exptime value determines when the request times out.
  *
  * - COMPLETED entries represent transactions that have been requested from a peer, but they timed out, a NOTFOUND
  *   message was received for them, or an invalid response was received. They're only kept around to prevent
@@ -234,7 +234,7 @@ private:
             return GetState() == State::CANDIDATE_READY || GetState() == State::CANDIDATE_BEST;
         }
 
-        //! Construct a new entry from scratch, initially in CANDIDATE_DELATED state.
+        //! Construct a new entry from scratch, initially in CANDIDATE_DELAYED state.
         Entry(const GenTxid& gtxid, uint64_t peer, bool preferred, std::chrono::microseconds reqtime,
             uint64_t sequence, bool first) :
             m_txhash(gtxid.GetHash()), m_time(reqtime), m_peer(peer), m_sequence(sequence), m_preferred(preferred),
@@ -263,12 +263,12 @@ private:
     //! This tracker's priority computer.
     const PriorityComputer m_computer;
 
-    /** An extractor for EntryTxHashs (with encapsulated PriorityComputer reference).
+    /** An extractor for EntryTxHash (with encapsulated PriorityComputer reference).
      *
      * See https://www.boost.org/doc/libs/1_54_0/libs/multi_index/doc/reference/key_extraction.html#key_extractors
      * for more information about the key extraction concept.
      */
-    struct EntryTxHashExtractor {
+    class EntryTxHashExtractor {
     private:
         const PriorityComputer& m_computer;
     public:
@@ -365,7 +365,7 @@ public:
     //! calls in between (which must have been for the same peer but different txids).
     void RequestedTx(uint64_t peer, const GenTxid& txid, std::chrono::microseconds exptime);
 
-    //! We received a response (a tx, or a NOTFOUND) for txid from peer. Note that if a good tx is received (such
+    //! We received a response (a tx, or a NOTFOUND) for a txid from a peer. Note that if a good tx is received (such
     //! that we don't need it anymore), AlreadyHaveTx should be called instead of (or in addition to)
     //! ReceivedResponse.
     void ReceivedResponse(uint64_t peer, const GenTxid& txid);
