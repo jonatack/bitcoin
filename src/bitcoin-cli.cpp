@@ -343,6 +343,7 @@ private:
         std::string addr;
         std::string sub_version;
         NetType net_type;
+        bool is_addnode;
         bool is_block_relay;
         bool is_outbound;
         bool operator<(const Peer& rhs) const { return std::tie(is_outbound, min_ping) < std::tie(rhs.is_outbound, rhs.min_ping); }
@@ -401,7 +402,7 @@ public:
         const int64_t time_now{GetSystemTimeInSeconds()};
         int ipv4_i{0}, ipv6_i{0}, onion_i{0}, block_relay_i{0}, total_i{0}; // inbound conn counters
         int ipv4_o{0}, ipv6_o{0}, onion_o{0}, block_relay_o{0}, total_o{0}; // outbound conn counters
-        size_t max_peer_id_length{2}, max_addr_length{0};
+        size_t max_peer_id_length{2}, max_addr_length{0}, total_addnodes{0};
         bool is_asmap_on{false};
         std::vector<Peer> peers;
         const UniValue& getpeerinfo{batch[ID_PEERINFO]["result"]};
@@ -410,6 +411,7 @@ public:
             const std::string addr{peer["addr"].get_str()};
             const std::string addr_local{peer["addrlocal"].isNull() ? "" : peer["addrlocal"].get_str()};
             const int mapped_as{peer["mapped_as"].isNull() ? 0 : peer["mapped_as"].get_int()};
+            const bool is_addnode{peer["addnode"].get_bool()};
             const bool is_block_relay{!peer["relaytxes"].get_bool()};
             const bool is_inbound{peer["inbound"].get_bool()};
             NetType net_type{NetType::ipv4};
@@ -434,6 +436,7 @@ public:
                 } else {
                     ++ipv4_o;
                 }
+                if (is_addnode) ++total_addnodes;
                 if (is_block_relay) ++block_relay_o;
             }
             if (DetailsRequested()) {
@@ -448,7 +451,7 @@ public:
                 const int64_t last_trxn{peer["last_transaction"].get_int64()};
                 const double min_ping{peer["minping"].isNull() ? -1 : peer["minping"].get_real()};
                 const double ping{peer["pingtime"].isNull() ? -1 : peer["pingtime"].get_real()};
-                peers.push_back({peer_id, mapped_as, version, conn_time, last_blck, last_recv, last_send, last_trxn, min_ping, ping, addr, sub_version, net_type, is_block_relay, !is_inbound});
+                peers.push_back({peer_id, mapped_as, version, conn_time, last_blck, last_recv, last_send, last_trxn, min_ping, ping, addr, sub_version, net_type, is_addnode, is_block_relay, !is_inbound});
                 max_peer_id_length = std::max(ToString(peer_id).length(), max_peer_id_length);
                 max_addr_length = std::max(addr.length() + 1, max_addr_length);
                 is_asmap_on |= (mapped_as != 0);
@@ -468,7 +471,7 @@ public:
                 std::string version{ToString(peer.version) + peer.sub_version};
                 result += strprintf(
                     "%3s %5s %5s%7s%7s%5s%5s%5s%5s%7s%*i %*s %-*s%s\n",
-                    peer.is_outbound ? "out" : "in",
+                    peer.is_addnode? "man" : peer.is_outbound ? "out" : "in",
                     peer.is_block_relay ? "block" : "full",
                     NetTypeEnumToString(peer.net_type),
                     PingTimeToString(peer.min_ping),
@@ -492,10 +495,12 @@ public:
         // Report peer connection totals by type.
         total_i = ipv4_i + ipv6_i + onion_i;
         total_o = ipv4_o + ipv6_o + onion_o;
-        result += "        ipv4    ipv6   onion   total  block-relay\n";
-        result += strprintf("in     %5i   %5i   %5i   %5i   %5i\n", ipv4_i, ipv6_i, onion_i, total_i, block_relay_i);
-        result += strprintf("out    %5i   %5i   %5i   %5i   %5i\n", ipv4_o, ipv6_o, onion_o, total_o, block_relay_o);
-        result += strprintf("total  %5i   %5i   %5i   %5i   %5i\n", ipv4_i + ipv4_o, ipv6_i + ipv6_o, onion_i + onion_o, total_i + total_o, block_relay_i + block_relay_o);
+        result += "        ipv4    ipv6   onion   total     blk";
+        if (total_addnodes > 0) result += "     man";
+        result += strprintf("\nin     %5i   %5i   %5i   %5i   %5i", ipv4_i, ipv6_i, onion_i, total_i, block_relay_i);
+        result += strprintf("\nout    %5i   %5i   %5i   %5i   %5i", ipv4_o, ipv6_o, onion_o, total_o, block_relay_o);
+        if (total_addnodes > 0) result += strprintf("   %5i", total_addnodes);
+        result += strprintf("\ntotal  %5i   %5i   %5i   %5i   %5i\n", ipv4_i + ipv4_o, ipv6_i + ipv6_o, onion_i + onion_o, total_i + total_o, block_relay_i + block_relay_o);
 
         // Report local addresses, ports, and scores.
         result += "\nLocal addresses";
