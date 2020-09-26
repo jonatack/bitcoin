@@ -362,6 +362,12 @@ private:
         if (gArgs.GetChainName() == CBaseChainParams::REGTEST) return " regtest";
         return "";
     }
+    std::string PingTimeToString(double sec) const
+    {
+        if (sec < 0) return "";
+        double msec{round(1000 * sec)};
+        return msec > 999999 ? "-" : ToString(msec);
+    }
 public:
     const int ID_PEERINFO = 0;
     const int ID_NETWORKINFO = 1;
@@ -465,8 +471,8 @@ public:
                     peer.is_outbound ? "out" : "in",
                     peer.is_block_relay ? "block" : "full",
                     NetTypeEnumToString(peer.net_type),
-                    peer.min_ping == -1 ? "" : ToString(round(1000 * peer.min_ping)),
-                    peer.ping == -1 ? "" : ToString(round(1000 * peer.ping)),
+                    PingTimeToString(peer.min_ping),
+                    PingTimeToString(peer.ping),
                     peer.last_send == 0 ? "" : ToString(time_now - peer.last_send),
                     peer.last_recv == 0 ? "" : ToString(time_now - peer.last_recv),
                     peer.last_trxn == 0 ? "" : ToString((time_now - peer.last_trxn) / 60),
