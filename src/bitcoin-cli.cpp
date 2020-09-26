@@ -504,7 +504,10 @@ public:
             result += ": n/a\n";
         } else {
             for (const UniValue& addr : local_addrs.getValues()) {
-                result += strprintf("\n%-40i  port %5i     score %6i", addr["address"].get_str(), addr["port"].get_int(), addr["score"].get_int());
+                max_addr_length = std::max(addr["address"].get_str().length() + 1, max_addr_length);
+            }
+            for (const UniValue& addr : local_addrs.getValues()) {
+                result += strprintf("\n%-*s    port %6i    score %6i", max_addr_length, addr["address"].get_str(), addr["port"].get_int(), addr["score"].get_int());
             }
         }
 
