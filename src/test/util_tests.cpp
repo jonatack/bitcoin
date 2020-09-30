@@ -734,13 +734,19 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
 {
     TestArgsManager test_args;
     const auto testnet = std::make_pair("-testnet", ArgsManager::ALLOW_ANY);
+    const auto signet = std::make_pair("-signet", ArgsManager::ALLOW_ANY);
     const auto regtest = std::make_pair("-regtest", ArgsManager::ALLOW_ANY);
-    test_args.SetupArgs({testnet, regtest});
+    test_args.SetupArgs({testnet, signet, regtest});
 
     const char* argv_testnet[] = {"cmd", "-testnet"};
+    const char* argv_signet[] = {"cmd", "-signet"};
     const char* argv_regtest[] = {"cmd", "-regtest"};
+    const char* argv_test_no_sig[] = {"cmd", "-regtest", "-nosignet"};
     const char* argv_test_no_reg[] = {"cmd", "-testnet", "-noregtest"};
-    const char* argv_both[] = {"cmd", "-testnet", "-regtest"};
+    const char* argv_both_1[] = {"cmd", "-testnet", "-regtest"};
+    const char* argv_both_2[] = {"cmd", "-testnet", "-signet"};
+    const char* argv_both_3[] = {"cmd", "-signet", "-regtest"};
+    const char* argv_all_three[] = {"cmd", "-testnet", "-signet", "-regtest"};
 
     // equivalent to "-testnet"
     // regtest in testnet section is ignored
@@ -753,13 +759,28 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
     BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_testnet, error));
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
+    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_signet, error));
+    BOOST_CHECK_EQUAL(test_args.GetChainName(), "signet");
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_test_no_sig, error));
+    BOOST_CHECK_EQUAL(test_args.GetChainName(), "regtest");
+
     BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_regtest, error));
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "regtest");
 
     BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_test_no_reg, error));
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both, error));
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_1, error));
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_2, error));
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_3, error));
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_all_three, error));
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
 
     BOOST_CHECK(test_args.ParseParameters(0, (char**)argv_testnet, error));
@@ -770,6 +791,14 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
+    BOOST_CHECK(test_args.ParseParameters(0, (char**)argv_signet, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
+
+    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_signet, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
     BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_regtest, error));
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
@@ -778,7 +807,19 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both, error));
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_1, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_2, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_3, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_all_three, error));
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
 
@@ -794,7 +835,31 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
+    BOOST_CHECK(test_args.ParseParameters(0, (char**)argv_signet, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
+
+    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_signet, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_test_no_sig, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
     BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_regtest, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_1, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_2, error));
+    test_args.ReadConfigString(testnetconf);
+    BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
+
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both_3, error));
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
 
@@ -802,7 +867,7 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both, error));
+    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_all_three, error));
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
 }
@@ -1010,7 +1075,7 @@ BOOST_FIXTURE_TEST_CASE(util_ArgsMerge, ArgsMergeTestingSetup)
 struct ChainMergeTestingSetup : public BasicTestingSetup {
     static constexpr int MAX_ACTIONS = 2;
 
-    enum Action { NONE, ENABLE_TEST, DISABLE_TEST, NEGATE_TEST, ENABLE_REG, DISABLE_REG, NEGATE_REG };
+    enum Action { NONE, ENABLE_TEST, DISABLE_TEST, NEGATE_TEST, ENABLE_SIG, DISABLE_SIG, NEGATE_SIG, ENABLE_REG, DISABLE_REG, NEGATE_REG };
     using ActionList = Action[MAX_ACTIONS];
 
     //! Enumerate all possible test configurations.
@@ -1038,11 +1103,15 @@ BOOST_FIXTURE_TEST_CASE(util_ChainMerge, ChainMergeTestingSetup)
         TestArgsManager parser;
         LOCK(parser.cs_args);
         parser.AddArg("-regtest", "regtest", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+        parser.AddArg("-signet", "signet", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
         parser.AddArg("-testnet", "testnet", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
 
         auto arg = [](Action action) { return action == ENABLE_TEST  ? "-testnet=1"   :
                                               action == DISABLE_TEST ? "-testnet=0"   :
                                               action == NEGATE_TEST  ? "-notestnet=1" :
+                                              action == ENABLE_REG   ? "-signet=1"   :
+                                              action == DISABLE_REG  ? "-signet=0"   :
+                                              action == NEGATE_TEST  ? "-nosignet=1" :
                                               action == ENABLE_REG   ? "-regtest=1"   :
                                               action == DISABLE_REG  ? "-regtest=0"   :
                                               action == NEGATE_REG   ? "-noregtest=1" : nullptr; };
@@ -1106,7 +1175,7 @@ BOOST_FIXTURE_TEST_CASE(util_ChainMerge, ChainMergeTestingSetup)
     // Results file is formatted like:
     //
     //   <input> || <output>
-    BOOST_CHECK_EQUAL(out_sha_hex, "f263493e300023b6509963887444c41386f44b63bc30047eb8402e8c1144854c");
+    BOOST_CHECK_EQUAL(out_sha_hex, "bcc10fe02bc4ecabb113b7904dcaf34ee33ccb2110d6fdde98f6518acba97de9");
 }
 
 BOOST_AUTO_TEST_CASE(util_ReadWriteSettings)
