@@ -3928,13 +3928,11 @@ void PeerManager::EvictExtraOutboundPeers(int64_t time_in_seconds)
     // The youngest block-relay-only peer would be the extra peer we connected
     // to temporarily in order to sync our tip; see net.cpp.
     // Note that we use higher nodeid as a measure for most recent connection.
-    int extra_block_relay_peers = m_connman.GetExtraBlockRelayCount();
-    if (extra_block_relay_peers > 0) {
-        std::pair<NodeId, int64_t> youngest_peer = {-1, 0};
-        std::pair<NodeId, int64_t> next_youngest_peer = {-1, 0};
+    if (m_connman.GetExtraBlockRelayCount() > 0) {
+        std::pair<NodeId, int64_t> youngest_peer{-1, 0}, next_youngest_peer{-1, 0};
 
-        m_connman.ForEachNode([&](CNode* pnode) {
-            LockAssertion lock(::cs_main);
+        m_connman.ForEachNode([&](CNode* pnode) EXCLUSIVE_LOCKS_REQUIRED(::cs_main) {
+            AssertLockHeld(::cs_main);
             if (!pnode->IsBlockOnlyConn() || pnode->fDisconnect) return;
             if (pnode->GetId() > youngest_peer.first) {
                 next_youngest_peer = youngest_peer;
@@ -3945,11 +3943,11 @@ void PeerManager::EvictExtraOutboundPeers(int64_t time_in_seconds)
         NodeId to_disconnect = youngest_peer.first;
         if (youngest_peer.second > next_youngest_peer.second) {
             // Our newest block-relay-only peer gave us a block more recently;
-            // disconnect our second youngest.
+            // disconnect our next youngest peer.
             to_disconnect = next_youngest_peer.first;
         }
-        m_connman.ForNode(to_disconnect, [&](CNode* pnode) {
-            LockAssertion lock(::cs_main);
+        m_connman.ForNode(to_disconnect, [&](CNode* pnode) EXCLUSIVE_LOCKS_REQUIRED(::cs_main) {
+            AssertLockHeld(::cs_main);
             // Make sure we're not getting a block right now, and that
             // we've been connected long enough for this eviction to happen
             // at all.
@@ -3959,6 +3957,9 @@ void PeerManager::EvictExtraOutboundPeers(int64_t time_in_seconds)
             if (node_state == nullptr ||
                 (time_in_seconds - pnode->nTimeConnected >= MINIMUM_CONNECT_TIME && node_state->nBlocksInFlight == 0)) {
                 pnode->fDisconnect = true;
+                if (to_disconnect != youngest_peer.first) {
+                    LogPrint(BCLog::NET, "Block-relay peer rotation: keeping new peer=%d, disconnecting old peer=%d\n", youngest_peer.first, to_disconnect);
+                }
                 LogPrint(BCLog::NET, "disconnecting extra block-relay-only peer=%d (last block received at time %d)\n", pnode->GetId(), pnode->nLastBlockTime);
                 return true;
             } else {
@@ -3970,8 +3971,7 @@ void PeerManager::EvictExtraOutboundPeers(int64_t time_in_seconds)
     }
 
     // Check whether we have too many OUTBOUND_FULL_RELAY peers
-    int extra_peers = m_connman.GetExtraFullOutboundCount();
-    if (extra_peers > 0) {
+    if (m_connman.GetExtraFullOutboundCount() > 0) {
         // If we have more OUTBOUND_FULL_RELAY peers than we target, disconnect one.
         // Pick the OUTBOUND_FULL_RELAY peer that least recently announced
         // us a new block, with ties broken by choosing the more recent
