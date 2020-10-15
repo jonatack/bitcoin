@@ -63,14 +63,14 @@ struct Announcement {
     /** What peer the request was from. */
     const NodeId m_peer;
     /** What sequence number this announcement has. */
-    const SequenceNumber m_sequence : 59;
+    const SequenceNumber m_sequence : 54;
     /** Whether the request is preferred. */
     const bool m_preferred : 1;
     /** Whether this is a wtxid request. */
     const bool m_is_wtxid : 1;
 
     /** What state this announcement is in. */
-    State m_state : 3;
+    State m_state : 8;
 
     /** Whether this announcement is selected. There can be at most 1 selected peer per txhash. */
     bool IsSelected() const
