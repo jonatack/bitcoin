@@ -13,6 +13,7 @@
 #include <clientversion.h>
 #include <consensus/consensus.h>
 #include <crypto/sha256.h>
+#include <functional>
 #include <net_permissions.h>
 #include <netbase.h>
 #include <node/ui_interface.h>
@@ -851,6 +852,12 @@ static bool CompareLocalHostTimeConnected(const NodeEvictionCandidate &a, const 
     return a.nTimeConnected > b.nTimeConnected;
 }
 
+static bool CompareOnionTimeConnected(const NodeEvictionCandidate& a, const NodeEvictionCandidate& b)
+{
+    if (a.m_is_onion != b.m_is_onion) return b.m_is_onion;
+    return a.nTimeConnected > b.nTimeConnected;
+}
+
 static bool CompareNetGroupKeyed(const NodeEvictionCandidate &a, const NodeEvictionCandidate &b) {
     return a.nKeyedNetGroup < b.nKeyedNetGroup;
 }
@@ -881,13 +888,13 @@ static bool CompareNodeBlockRelayOnlyTime(const NodeEvictionCandidate &a, const 
     return a.nTimeConnected > b.nTimeConnected;
 }
 
-//! Sort an array by the specified comparator, then erase the last K elements.
+//! Sort an array by the specified comparator, then erase the last K elements where predicate is true.
 template<typename T, typename Comparator>
-static void EraseLastKElements(std::vector<T> &elements, Comparator comparator, size_t k)
+static void EraseLastKElements(std::vector<T> &elements, Comparator comparator, size_t k, std::function<bool(const NodeEvictionCandidate&)> predicate = [](const NodeEvictionCandidate& n) { return true ;})
 {
     std::sort(elements.begin(), elements.end(), comparator);
     size_t eraseSize = std::min(k, elements.size());
-    elements.erase(elements.end() - eraseSize, elements.end());
+    elements.erase(std::remove_if(elements.end() - eraseSize, elements.end(), predicate), elements.end());
 }
 
 [[nodiscard]] Optional<NodeId> SelectNodeToEvict(std::vector<NodeEvictionCandidate>&& vEvictionCandidates)
@@ -914,16 +921,24 @@ static void EraseLastKElements(std::vector<T> &elements, Comparator comparator, 
 
     // Protect the half of the remaining nodes which have been connected the longest.
     // This replicates the non-eviction implicit behavior, and precludes attacks that start later.
-    // Reserve half of these protected spots for localhost peers, even if
+    // Reserve half of these protected spots for onion and localhost peers, even if
     // they're not longest-uptime overall. This helps protect tor peers, which
     // tend to be otherwise disadvantaged under our eviction criteria.
-    size_t initial_size = vEvictionCandidates.size();
+    const size_t initial_size = vEvictionCandidates.size();
     size_t total_protect_size = initial_size / 2;
 
-    // Pick out up to 1/4 peers that are localhost, sorted by longest uptime.
-    std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), CompareLocalHostTimeConnected);
-    size_t local_erase_size = total_protect_size / 2;
-    vEvictionCandidates.erase(std::remove_if(vEvictionCandidates.end() - local_erase_size, vEvictionCandidates.end(), [](NodeEvictionCandidate const &n) { return n.m_is_local; }), vEvictionCandidates.end());
+    // Pick out up to 1/4 peers connected via our onion service, sorted by longest uptime.
+    const size_t local_erase_size = total_protect_size / 2;
+    EraseLastKElements(vEvictionCandidates, CompareOnionTimeConnected, local_erase_size, [](const NodeEvictionCandidate& n) { return n.m_is_onion; });
+
+    // If no onion peers were removed, extend the same protection to localhost peers,
+    // as manually configured hidden services not using `-bind=<addr>[:<port>]=onion`
+    // will not be detected as inbound onion connections.
+    if (initial_size == vEvictionCandidates.size()) {
+        // Pick out up to 1/4 peers that are localhost, sorted by longest uptime.
+        EraseLastKElements(vEvictionCandidates, CompareLocalHostTimeConnected, local_erase_size, [](const NodeEvictionCandidate& n) { return n.m_is_local; });
+    }
+
     // Calculate how many we removed, and update our total number of peers that
     // we want to protect based on uptime accordingly.
     total_protect_size -= initial_size - vEvictionCandidates.size();
