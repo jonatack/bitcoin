@@ -299,8 +299,8 @@ class NetinfoRequestHandler : public BaseRequestHandler
 {
 private:
     static constexpr int8_t UNKNOWN_NETWORK{-1};
-    static constexpr uint8_t m_networks_size{3};
-    const std::array<std::string, m_networks_size> m_networks{{"ipv4", "ipv6", "onion"}};
+    static constexpr uint8_t m_networks_size{4};
+    const std::array<std::string, m_networks_size> m_networks{{"ipv4", "ipv6", "onion", "i2p"}};
     std::array<std::array<uint16_t, m_networks_size + 3>, 3> m_counts{{{}}}; //!< Peer counts by (in/out/total, networks/total/block-relay/manual)
     int8_t NetworkStringToId(const std::string& str) const
     {
@@ -543,12 +543,12 @@ public:
         }
 
         // Report peer connection totals by type.
-        result += "        ipv4    ipv6   onion   total   block";
+        result += "        ipv4    ipv6   onion     i2p   total   block";
         const int manual_conns{m_counts.at(1).at(m_networks_size + 2)};
         if (manual_conns) result += "  manual";
         const std::array<std::string, 3> rows{{"in", "out", "total"}};
-        for (uint8_t i = 0; i < m_networks_size; ++i) {
-            result += strprintf("\n%-5s  %5i   %5i   %5i   %5i   %5i", rows.at(i), m_counts.at(i).at(0), m_counts.at(i).at(1), m_counts.at(i).at(2), m_counts.at(i).at(m_networks_size), m_counts.at(i).at(m_networks_size + 1));
+        for (uint8_t i = 0; i < 3; ++i) {
+            result += strprintf("\n%-5s  %5i   %5i   %5i   %5i   %5i   %5i", rows.at(i), m_counts.at(i).at(0), m_counts.at(i).at(1), m_counts.at(i).at(2), m_counts.at(i).at(3), m_counts.at(i).at(m_networks_size), m_counts.at(i).at(m_networks_size + 1));
             if (i == 1 && manual_conns) result += strprintf("   %5i", manual_conns); // manual peers count
         }
 
