@@ -2094,9 +2094,9 @@ bool FindScriptPubKey(std::atomic<int>& scan_progress, const std::atomic<bool>& 
 } // namespace
 
 /** RAII object to prevent concurrency issue when scanning the txout set */
-static std::atomic<int> g_scan_progress;
-static std::atomic<bool> g_scan_in_progress;
-static std::atomic<bool> g_should_abort_scan;
+static std::atomic<int> g_scan_progress{0};
+static std::atomic<bool> g_scan_in_progress{false};
+static std::atomic<bool> g_should_abort_scan{false};
 class CoinsViewScanReserver
 {
 private:
