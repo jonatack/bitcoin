@@ -2181,8 +2181,8 @@ static RPCHelpMan scantxoutset()
     RPCTypeCheck(request.params, {UniValue::VSTR, UniValue::VARR});
 
     UniValue result(UniValue::VOBJ);
+    CoinsViewScanReserver reserver;
     if (request.params[0].get_str() == "status") {
-        CoinsViewScanReserver reserver;
         if (reserver.reserve()) {
             // no scan in progress
             return NullUniValue;
@@ -2190,7 +2190,6 @@ static RPCHelpMan scantxoutset()
         result.pushKV("progress", g_scan_progress);
         return result;
     } else if (request.params[0].get_str() == "abort") {
-        CoinsViewScanReserver reserver;
         if (reserver.reserve()) {
             // reserve was possible which means no scan was running
             return false;
@@ -2199,7 +2198,6 @@ static RPCHelpMan scantxoutset()
         g_should_abort_scan = true;
         return true;
     } else if (request.params[0].get_str() == "start") {
-        CoinsViewScanReserver reserver;
         if (!reserver.reserve()) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Scan already in progress, use action \"abort\" or \"status\"");
         }
