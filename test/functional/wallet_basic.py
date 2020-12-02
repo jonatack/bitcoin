@@ -15,8 +15,6 @@ from test_framework.util import (
 )
 from test_framework.wallet_util import test_address
 
-OUT_OF_RANGE = "Amount out of range"
-
 
 class WalletTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -247,15 +245,20 @@ class WalletTest(BitcoinTestFramework):
         for key in ["totalFee", "feeRate"]:
             assert_raises_rpc_error(-8, "Unknown named parameter key", self.nodes[2].sendtoaddress, address=address, amount=1, fee_rate=1, key=1)
 
+        self.log.info("Test sendmany raises RPC error when invalid fee rates are passed")
+        msg = "Invalid amount for fee_rate (must be at least 0.001 sat/vB)"
+        for fee_rate in [0, 0.00000001, 0.0009, 0.00099999]:
+            assert_raises_rpc_error(-3, msg, self.nodes[2].sendmany, amounts={address: 10}, fee_rate=fee_rate)
+
+        msg = "Invalid amount for fee_rate (too many decimal places)"
+        for invalid_value in [0.000000001, 1.111111111, 11111111111]:
+            assert_raises_rpc_error(-3, msg, self.nodes[2].sendmany, amounts={address: 10}, fee_rate=invalid_value)
+        assert_raises_rpc_error(-3, "Invalid amount for fee_rate (no value passed)", self.nodes[2].sendmany, amounts={address: 10}, fee_rate="")
+        assert_raises_rpc_error(-3, OUT_OF_RANGE, self.nodes[2].sendmany, amounts={address: 10}, fee_rate=-1)
+
         # Test setting explicit fee rate just below the minimum.
-        self.log.info("Test sendmany raises 'fee rate too low' if fee_rate of 0.99999999 is passed")
         assert_raises_rpc_error(-6, "Fee rate (0.999 sat/vB) is lower than the minimum fee rate setting (1.000 sat/vB)",
             self.nodes[2].sendmany, amounts={address: 10}, fee_rate=0.99999999)
-
-        self.log.info("Test sendmany raises if fee_rate of 0 or -1 is passed")
-        assert_raises_rpc_error(-6, "Fee rate (0.000 sat/vB) is lower than the minimum fee rate setting (1.000 sat/vB)",
-            self.nodes[2].sendmany, amounts={address: 10}, fee_rate=0)
-        assert_raises_rpc_error(-3, OUT_OF_RANGE, self.nodes[2].sendmany, amounts={address: 10}, fee_rate=-1)
 
         self.log.info("Test sendmany raises if an invalid conf_target or estimate_mode is passed")
         for target, mode in product([-1, 0, 1009], ["economical", "conservative"]):
@@ -356,10 +359,10 @@ class WalletTest(BitcoinTestFramework):
 
         # General checks for errors from incorrect inputs
         # This will raise an exception because the amount is negative
-        assert_raises_rpc_error(-3, OUT_OF_RANGE, self.nodes[0].sendtoaddress, self.nodes[2].getnewaddress(), "-1")
+        assert_raises_rpc_error(-3, "Amount out of range", self.nodes[0].sendtoaddress, self.nodes[2].getnewaddress(), "-1")
 
         # This will raise an exception because the amount type is wrong
-        assert_raises_rpc_error(-3, "Invalid amount", self.nodes[0].sendtoaddress, self.nodes[2].getnewaddress(), "1f-4")
+        assert_raises_rpc_error(-3, "Invalid amount (too many decimal places)", self.nodes[0].sendtoaddress, self.nodes[2].getnewaddress(), "1f-4")
 
         # This will raise an exception since generate does not accept a string
         assert_raises_rpc_error(-1, "not an integer", self.nodes[0].generate, "2")
@@ -417,15 +420,20 @@ class WalletTest(BitcoinTestFramework):
             for key in ["totalFee", "feeRate"]:
                 assert_raises_rpc_error(-8, "Unknown named parameter key", self.nodes[2].sendtoaddress, address=address, amount=1, fee_rate=1, key=1)
 
+            self.log.info("Test sendtoaddress raises RPC error when invalid fee rates are passed")
+            msg = "Invalid amount for fee_rate (must be at least 0.001 sat/vB)"
+            for fee_rate in [0, 0.00000001, 0.0009, 0.00099999]:
+                assert_raises_rpc_error(-3, msg, self.nodes[2].sendtoaddress, address=address, amount=10, fee_rate=fee_rate)
+
+            msg = "Invalid amount for fee_rate (too many decimal places)"
+            for invalid_value in [0.000000001, 1.111111111, 11111111111]:
+                assert_raises_rpc_error(-3, msg, self.nodes[2].sendtoaddress, address=address, amount=1.0, fee_rate=invalid_value)
+            assert_raises_rpc_error(-3, "Invalid amount for fee_rate (no value passed)", self.nodes[2].sendtoaddress, address=address, amount=1.0, fee_rate="")
+            assert_raises_rpc_error(-3, OUT_OF_RANGE, self.nodes[2].sendtoaddress, address=address, amount=1.0, fee_rate=-1)
+
             # Test setting explicit fee rate just below the minimum.
-            self.log.info("Test sendtoaddress raises 'fee rate too low' if fee_rate of 0.99999999 is passed")
             assert_raises_rpc_error(-6, "Fee rate (0.999 sat/vB) is lower than the minimum fee rate setting (1.000 sat/vB)",
                 self.nodes[2].sendtoaddress, address=address, amount=1, fee_rate=0.99999999)
-
-            self.log.info("Test sendtoaddress raises if fee_rate of 0 or -1 is passed")
-            assert_raises_rpc_error(-6, "Fee rate (0.000 sat/vB) is lower than the minimum fee rate setting (1.000 sat/vB)",
-                self.nodes[2].sendtoaddress, address=address, amount=10, fee_rate=0)
-            assert_raises_rpc_error(-3, OUT_OF_RANGE, self.nodes[2].sendtoaddress, address=address, amount=1.0, fee_rate=-1)
 
             self.log.info("Test sendtoaddress raises if an invalid conf_target or estimate_mode is passed")
             for target, mode in product([-1, 0, 1009], ["economical", "conservative"]):

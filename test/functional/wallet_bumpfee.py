@@ -110,13 +110,19 @@ class BumpFeeTest(BitcoinTestFramework):
         assert_raises_rpc_error(-8, "Insufficient total fee 0.00000141", rbf_node.bumpfee, rbfid, {"fee_rate": INSUFFICIENT})
 
         self.log.info("Test invalid fee rate settings")
-        assert_raises_rpc_error(-8, "Insufficient total fee 0.00", rbf_node.bumpfee, rbfid, {"fee_rate": 0})
         assert_raises_rpc_error(-4, "Specified or calculated fee 0.141 is too high (cannot be higher than -maxtxfee 0.10",
             rbf_node.bumpfee, rbfid, {"fee_rate": TOO_HIGH})
-        assert_raises_rpc_error(-3, "Amount out of range", rbf_node.bumpfee, rbfid, {"fee_rate": -1})
+        for fee_rate in [0, 0.00000001, 0.0009, 0.00099999]:
+            assert_raises_rpc_error(-3, "Invalid amount for fee_rate (must be at least 0.001 sat/vB)",
+                rbf_node.bumpfee, rbfid, {"fee_rate": fee_rate})
+        msg = "Invalid amount for fee_rate (too many decimal places)"
+        for invalid_value in [0.000000001, 1.111111111, 11111111111]:
+            assert_raises_rpc_error(-3, msg, rbf_node.bumpfee, rbfid, {"fee_rate": invalid_value})
+        assert_raises_rpc_error(-3, "Invalid amount for fee_rate (no value passed)", rbf_node.bumpfee, rbfid, {"fee_rate": ""})
+        assert_raises_rpc_error(-3, "Amount out of range for fee_rate", rbf_node.bumpfee, rbfid, {"fee_rate": -1})
         for value in [{"foo": "bar"}, True]:
             assert_raises_rpc_error(-3, "Amount is not a number or string", rbf_node.bumpfee, rbfid, {"fee_rate": value})
-        assert_raises_rpc_error(-3, "Invalid amount", rbf_node.bumpfee, rbfid, {"fee_rate": ""})
+        assert_raises_rpc_error(-3, "Invalid amount for fee_rate", rbf_node.bumpfee, rbfid, {"fee_rate": ""})
 
         self.log.info("Test explicit fee rate raises RPC error if both fee_rate and conf_target are passed")
         assert_raises_rpc_error(-8, "Cannot specify both conf_target and fee_rate. Please provide either a confirmation "

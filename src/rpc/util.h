@@ -81,6 +81,8 @@ extern std::vector<unsigned char> ParseHexO(const UniValue& o, std::string strKe
 CoinStatsHashType ParseHashType(const UniValue& param, const CoinStatsHashType default_type);
 
 extern CAmount AmountFromValue(const UniValue& value);
+extern CAmount AmountFromValue(const UniValue& value, const std::string& field);
+
 extern std::string HelpExampleCli(const std::string& methodname, const std::string& args);
 extern std::string HelpExampleRpc(const std::string& methodname, const std::string& args);
 

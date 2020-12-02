@@ -216,7 +216,7 @@ static void SetFeeEstimateMode(const CWallet& wallet, CCoinControl& cc, const Un
         if (!estimate_mode.isNull() && estimate_mode.get_str() != "unset") {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify both estimate_mode and fee_rate");
         }
-        cc.m_feerate = CFeeRate(AmountFromValue(fee_rate), COIN);
+        cc.m_feerate = CFeeRate(AmountFromValue(fee_rate, "fee_rate"), COIN);
         if (override_min_fee) cc.fOverrideFeeRate = true;
         // Default RBF to true for explicit fee_rate, if unset.
         if (cc.m_signal_bip125_rbf == nullopt) cc.m_signal_bip125_rbf = true;
@@ -3147,7 +3147,7 @@ void FundTransaction(CWallet* const pwallet, CMutableTransaction& tx, CAmount& f
             if (options.exists("estimate_mode")) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify both estimate_mode and feeRate");
             }
-            coinControl.m_feerate = CFeeRate(AmountFromValue(options["feeRate"]));
+            coinControl.m_feerate = CFeeRate(AmountFromValue(options["feeRate"], "feeRate"));
             coinControl.fOverrideFeeRate = true;
         }
 

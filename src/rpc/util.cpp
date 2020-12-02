@@ -80,9 +80,28 @@ CAmount AmountFromValue(const UniValue& value)
         throw JSONRPCError(RPC_TYPE_ERROR, "Amount is not a number or string");
     CAmount amount;
     if (!ParseFixedPoint(value.getValStr(), 8, &amount))
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount (too many decimal places)");
     if (!MoneyRange(amount))
         throw JSONRPCError(RPC_TYPE_ERROR, "Amount out of range");
+    return amount;
+}
+
+CAmount AmountFromValue(const UniValue& value, const std::string& field)
+{
+    if (!value.isNum() && !value.isStr()) {
+        throw JSONRPCError(RPC_TYPE_ERROR, strprintf("Amount is not a number or string for %s", field));
+    }
+    const std::string val_str{value.getValStr()};
+    if (val_str.empty()) {
+        throw JSONRPCError(RPC_TYPE_ERROR, strprintf("Invalid amount for %s (no value passed)", field));
+    }
+    CAmount amount;
+    if (!ParseFixedPoint(val_str, 8, &amount)) {
+        throw JSONRPCError(RPC_TYPE_ERROR, strprintf("Invalid amount for %s (too many decimal places)", field));
+    }
+    if (!MoneyRange(amount)) {
+        throw JSONRPCError(RPC_TYPE_ERROR, strprintf("Amount out of range for %s", field));
+    }
     return amount;
 }
 
