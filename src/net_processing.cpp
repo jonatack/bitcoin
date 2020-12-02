@@ -3956,6 +3956,9 @@ void PeerManager::EvictExtraOutboundPeers(int64_t time_in_seconds)
             if (node_state == nullptr ||
                 (time_in_seconds - pnode->nTimeConnected >= MINIMUM_CONNECT_TIME && node_state->nBlocksInFlight == 0)) {
                 pnode->fDisconnect = true;
+                if (to_disconnect != youngest_peer.first) {
+                    LogPrint(BCLog::NET, "Block-relay peer rotation: keeping new peer=%d, disconnecting old peer=%d\n", youngest_peer.first, to_disconnect);
+                }
                 LogPrint(BCLog::NET, "disconnecting extra block-relay-only peer=%d (last block received at time %d)\n", pnode->GetId(), pnode->nLastBlockTime);
                 return true;
             } else {

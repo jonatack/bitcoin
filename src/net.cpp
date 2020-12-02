@@ -1837,6 +1837,7 @@ int CConnman::GetExtraFullOutboundCount()
             }
         }
     }
+    LogPrintf("GetExtraFullOutboundCount() %d\n", std::max(full_outbound_peers - m_max_outbound_full_relay, 0));
     return std::max(full_outbound_peers - m_max_outbound_full_relay, 0);
 }
 
@@ -1851,6 +1852,7 @@ int CConnman::GetExtraBlockRelayCount()
             }
         }
     }
+    LogPrintf("GetExtraBlockRelayCount() %d\n", std::max(block_relay_peers - m_max_outbound_block_relay, 0));
     return std::max(block_relay_peers - m_max_outbound_block_relay, 0);
 }
 
@@ -1883,6 +1885,7 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
     // Minimum time before next feeler connection (in microseconds).
     int64_t nNextFeeler = PoissonNextSend(nStart*1000*1000, FEELER_INTERVAL);
     int64_t nNextExtraBlockRelay = PoissonNextSend(nStart*1000*1000, EXTRA_BLOCK_RELAY_ONLY_PEER_INTERVAL);
+    LogPrintf("nNextExtraBlockRelay %d\n", nNextExtraBlockRelay);
     while (!interruptNet)
     {
         ProcessAddrFetch();
@@ -1991,6 +1994,7 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
             // connections, they do not get their own ConnectionType enum
             // (similar to how we deal with extra outbound peers).
             nNextExtraBlockRelay = PoissonNextSend(nTime, EXTRA_BLOCK_RELAY_ONLY_PEER_INTERVAL);
+            LogPrintf("nNextExtraBlockRelay %d\n", nNextExtraBlockRelay);
             conn_type = ConnectionType::BLOCK_RELAY;
         } else if (nTime > nNextFeeler) {
             nNextFeeler = PoissonNextSend(nTime, FEELER_INTERVAL);
@@ -2998,6 +3002,12 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
 
     m_deserializer = MakeUnique<V1TransportDeserializer>(V1TransportDeserializer(Params(), GetId(), SER_NETWORK, INIT_PROTO_VERSION));
     m_serializer = MakeUnique<V1TransportSerializer>(V1TransportSerializer());
+
+
+    // 10% chance of initializing nLastBlockTime to current time
+    // if (GetRandInt(100) <= 10) {
+    //     nLastBlockTime = GetTime();
+    // }
 }
 
 CNode::~CNode()
