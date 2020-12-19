@@ -219,6 +219,9 @@ struct Peer {
     /** Work queue of items requested by this peer **/
     std::deque<CInv> m_getdata_requests GUARDED_BY(m_getdata_requests_mutex);
 
+    /** Whether a peer has sent us a disabletx message */
+    std::atomic<bool> m_disable_tx{false};
+
     explicit Peer(NodeId id) : m_id(id) {}
 };
 
@@ -252,6 +255,9 @@ public:
     void Misbehaving(const NodeId pnode, const int howmuch, const std::string& message) override;
     void ProcessMessage(CNode& pfrom, const std::string& msg_type, CDataStream& vRecv,
                         const std::chrono::microseconds time_received, const std::atomic<bool>& interruptMsgProc) override;
+
+    /** Whether to relay addresses with a peer. */
+    bool IsAddrRelayPeer(const CNode& pnode);
 
 private:
     /** Consider evicting an outbound peer based on the amount of time they've been behind our tip */
@@ -889,6 +895,15 @@ void PeerManagerImpl::PushNodeVersion(CNode& pnode, int64_t nTime)
     } else {
         LogPrint(BCLog::NET, "send version message: version %d, blocks=%d, us=%s, txrelay=%d, peer=%d\n", PROTOCOL_VERSION, nNodeStartingHeight, addrMe.ToString(), tx_relay, nodeid);
     }
+}
+
+bool PeerManagerImpl::IsAddrRelayPeer(const CNode& pnode)
+{
+    PeerRef peer = GetPeerRef(pnode.GetId());
+    if (peer == nullptr || peer->m_disable_tx || !pnode.RelayAddrsWithConn()) {
+        return false;
+    }
+    return true;
 }
 
 void PeerManagerImpl::AddTxAnnouncement(const CNode& node, const GenTxid& gtxid, std::chrono::microseconds current_time)
@@ -1630,7 +1645,8 @@ void RelayTransaction(const uint256& txid, const uint256& wtxid, const CConnman&
 static void RelayAddress(const CNode& originator,
                          const CAddress& addr,
                          bool fReachable,
-                         const CConnman& connman)
+                         const CConnman& connman,
+                         PeerManagerImpl* peerman)
 {
     if (!fReachable && !addr.IsRelayable()) return;
 
@@ -1647,8 +1663,8 @@ static void RelayAddress(const CNode& originator,
     std::array<std::pair<uint64_t, CNode*>,2> best{{{0, nullptr}, {0, nullptr}}};
     assert(nRelayNodes <= best.size());
 
-    auto sortfunc = [&best, &hasher, nRelayNodes, &originator, &addr](CNode* pnode) {
-        if (pnode->RelayAddrsWithConn() && pnode != &originator && pnode->IsAddrCompatible(addr)) {
+    auto sortfunc = [&best, &hasher, nRelayNodes, &originator, &addr, &peerman](CNode* pnode) {
+        if (peerman->IsAddrRelayPeer(*pnode) && pnode != &originator && pnode->IsAddrCompatible(addr)) {
             uint64_t hashKey = CSipHasher(hasher).Write(pnode->GetId()).Finalize();
             for (unsigned int i = 0; i < nRelayNodes; i++) {
                  if (hashKey > best[i].first) {
@@ -2794,8 +2810,20 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
             pfrom.fDisconnect = true;
             return;
         }
-        // ignore this for now - later we can downgrade the resources allocated
-        // to this peer.
+        if (pfrom.IsFullOutboundConn()) {
+            // If we picked an outbound for tx-relay and it sends us a
+            // disabletx, we want to find another peer.
+            pfrom.fDisconnect = true;
+            return;
+        }
+        if (pfrom.m_tx_relay != nullptr && WITH_LOCK(pfrom.m_tx_relay->cs_filter, return pfrom.m_tx_relay->fRelayTxes)) {
+            // Can't send a DISABLETX message if they didn't turn off tx-relay
+            // in the version message.
+            pfrom.fDisconnect = true;
+            return;
+        }
+
+        peer->m_disable_tx = true;
         return;
     }
 
@@ -2817,7 +2845,7 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
 
         s >> vAddr;
 
-        if (!pfrom.RelayAddrsWithConn()) {
+        if (!IsAddrRelayPeer(pfrom)) {
             LogPrint(BCLog::NET, "ignoring %s message from %s peer=%d\n", msg_type, pfrom.ConnectionTypeAsString(), pfrom.GetId());
             return;
         }
@@ -2853,7 +2881,7 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
             if (addr.nTime > nSince && !pfrom.fGetAddr && vAddr.size() <= 10 && addr.IsRoutable())
             {
                 // Relay to a limited number of other nodes
-                RelayAddress(pfrom, addr, fReachable, m_connman);
+                RelayAddress(pfrom, addr, fReachable, m_connman, this);
             }
             // Do not store addresses outside our network
             if (fReachable)
@@ -3786,6 +3814,11 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
             }
             return;
         }
+        if (peer->m_disable_tx) {
+            LogPrint(BCLog::NET, "mempool request after disabletx received; disconnect peer=%d\n", pfrom.GetId());
+            pfrom.fDisconnect = true;
+            return;
+        }
 
         if (pfrom.m_tx_relay != nullptr) {
             LOCK(pfrom.m_tx_relay->cs_tx_inventory);
@@ -3871,11 +3904,12 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
     }
 
     if (msg_type == NetMsgType::FILTERLOAD) {
-        if (!(pfrom.GetLocalServices() & NODE_BLOOM)) {
+        if (!(pfrom.GetLocalServices() & NODE_BLOOM) || peer->m_disable_tx) {
             LogPrint(BCLog::NET, "filterload received despite not offering bloom services from peer=%d; disconnecting\n", pfrom.GetId());
             pfrom.fDisconnect = true;
             return;
         }
+
         CBloomFilter filter;
         vRecv >> filter;
 
@@ -3894,7 +3928,7 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
     }
 
     if (msg_type == NetMsgType::FILTERADD) {
-        if (!(pfrom.GetLocalServices() & NODE_BLOOM)) {
+        if (!(pfrom.GetLocalServices() & NODE_BLOOM) || peer->m_disable_tx) {
             LogPrint(BCLog::NET, "filteradd received despite not offering bloom services from peer=%d; disconnecting\n", pfrom.GetId());
             pfrom.fDisconnect = true;
             return;
@@ -3922,7 +3956,7 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
     }
 
     if (msg_type == NetMsgType::FILTERCLEAR) {
-        if (!(pfrom.GetLocalServices() & NODE_BLOOM)) {
+        if (!(pfrom.GetLocalServices() & NODE_BLOOM) || peer->m_disable_tx) {
             LogPrint(BCLog::NET, "filterclear received despite not offering bloom services from peer=%d; disconnecting\n", pfrom.GetId());
             pfrom.fDisconnect = true;
             return;
@@ -4357,7 +4391,7 @@ bool PeerManagerImpl::SendMessages(CNode* pto)
         // Address refresh broadcast
         auto current_time = GetTime<std::chrono::microseconds>();
 
-        if (pto->RelayAddrsWithConn() && !::ChainstateActive().IsInitialBlockDownload() && pto->m_next_local_addr_send < current_time) {
+        if (IsAddrRelayPeer(*pto) && !::ChainstateActive().IsInitialBlockDownload() && pto->m_next_local_addr_send < current_time) {
             // If we've sent before, clear the bloom filter for the peer, so that our
             // self-announcement will actually go out.
             // This might be unnecessary if the bloom filter has already rolled
@@ -4374,7 +4408,7 @@ bool PeerManagerImpl::SendMessages(CNode* pto)
         //
         // Message: addr
         //
-        if (pto->RelayAddrsWithConn() && pto->m_next_addr_send < current_time) {
+        if (IsAddrRelayPeer(*pto) && pto->m_next_addr_send < current_time) {
             pto->m_next_addr_send = PoissonNextSend(current_time, AVG_ADDRESS_BROADCAST_INTERVAL);
             std::vector<CAddress> vAddr;
             vAddr.reserve(pto->vAddrToSend.size());
