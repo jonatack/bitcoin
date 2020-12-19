@@ -76,8 +76,8 @@ public:
 /**
  * Dump the anchor IP address database (anchors.dat)
  *
- * Anchors are last known outgoing block-relay-only peers that are
- * tried to re-connect to on startup.
+ * Anchors are the last known outbound-block-relay peers. An attempt is made to
+ * reconnect to them on startup.
  */
 void DumpAnchors(const fs::path& anchors_db_path, const std::vector<CAddress>& anchors);
 

@@ -207,7 +207,7 @@ private:
     const bool m_ignore_incoming_txs;
 
     /** Whether we've completed initial sync yet, for determining when to turn
-      * on extra block-relay-only peers. */
+      * on extra outbound-block-relay peers. */
     bool m_initial_sync_finished{false};
 
     /** Protects m_peer_map */

@@ -31,7 +31,7 @@
 
 const std::vector<std::string> CONNECTION_TYPE_DOC{
         "outbound-full-relay (default automatic connections)",
-        "block-relay-only (does not relay transactions or addresses)",
+        "outbound-block-relay (does not relay transactions or addresses)",
         "inbound (initiated by the peer)",
         "manual (added via addnode RPC or -addnode/-connect configuration options)",
         "addr-fetch (short-lived automatic connection for soliciting addresses)",
