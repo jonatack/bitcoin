@@ -58,6 +58,13 @@ commits.
 
 Do not submit patches solely to modify the style of existing code.
 
+To facilitate review of meaningful code changes and reduce the chance of
+introducing a regression, avoid unnecessary formatting changes that obfuscate
+code changes in the same diff. For example, do not add line breaks to a function
+parameter list when updating one of its parameters, as it requires reviewers to
+needlessly verify that all the parameters were moved without error and obscures
+the actual code change.
+
 Coding Style (C++)
 ------------------
 
