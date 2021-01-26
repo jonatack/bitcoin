@@ -717,8 +717,8 @@ public:
 
     std::string ConnectionTypeAsString() const { return ::ConnectionTypeAsString(m_conn_type); }
 
-    /** Whether this peer is an inbound onion, e.g. connected via our Tor onion service. */
-    bool IsInboundOnion() const { return m_inbound_onion; }
+    //! Whether this peer is an inbound onion, i.e. connected via our Tor onion service.
+    const bool m_inbound_onion{false};
 
 private:
     const NodeId id;
@@ -751,9 +751,6 @@ private:
     // Our address, as reported by the peer
     CService addrLocal GUARDED_BY(cs_addrLocal);
     mutable RecursiveMutex cs_addrLocal;
-
-    //! Whether this peer is an inbound onion, e.g. connected via our Tor onion service.
-    const bool m_inbound_onion{false};
 
     mapMsgCmdSize mapSendBytesPerMsgCmd GUARDED_BY(cs_vSend);
     mapMsgCmdSize mapRecvBytesPerMsgCmd GUARDED_BY(cs_vRecv);
