@@ -730,19 +730,19 @@ static void MaybeSetPeerAsAnnouncingHeaderAndIDs(NodeId nodeid, CConnman& connma
         connman.ForNode(nodeid, [&connman](CNode* pfrom) EXCLUSIVE_LOCKS_REQUIRED(::cs_main) {
             AssertLockHeld(::cs_main);
             uint64_t nCMPCTBLOCKVersion = (pfrom->GetLocalServices() & NODE_WITNESS) ? 2 : 1;
+            // Per BIP152, we can request up to 3 of our peers to provide us compact blocks in high bandwidth mode.
             if (lNodesAnnouncingHeaderAndIDs.size() >= 3) {
-                // As per BIP152, we only get 3 of our peers to announce
-                // blocks using compact encodings.
-                connman.ForNode(lNodesAnnouncingHeaderAndIDs.front(), [&connman, nCMPCTBLOCKVersion](CNode* pnodeStop){
+                // We reached the limit of 3 peers selected by us for high bandwidth mode, so we select low bandwidth mode for this peer.
+                connman.ForNode(lNodesAnnouncingHeaderAndIDs.front(), [&connman, nCMPCTBLOCKVersion](CNode* pnodeStop) {
                     connman.PushMessage(pnodeStop, CNetMsgMaker(pnodeStop->GetCommonVersion()).Make(NetMsgType::SENDCMPCT, /*fAnnounceUsingCMPCTBLOCK=*/false, nCMPCTBLOCKVersion));
-                    // save BIP152 bandwidth state: we select peer to be low-bandwidth
+                    // Save BIP152 bandwidth state; select this peer to be in low bandwidth mode.
                     pnodeStop->m_bip152_highbandwidth_to = false;
                     return true;
                 });
                 lNodesAnnouncingHeaderAndIDs.pop_front();
             }
             connman.PushMessage(pfrom, CNetMsgMaker(pfrom->GetCommonVersion()).Make(NetMsgType::SENDCMPCT, /*fAnnounceUsingCMPCTBLOCK=*/true, nCMPCTBLOCKVersion));
-            // save BIP152 bandwidth state: we select peer to be high-bandwidth
+            // Save BIP152 bandwidth state; select this peer to be in high bandwidth mode.
             pfrom->m_bip152_highbandwidth_to = true;
             lNodesAnnouncingHeaderAndIDs.push_back(pfrom->GetId());
             return true;
@@ -2718,6 +2718,8 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
         return;
     }
 
+    // BIP152 defines feature negotiation of sendcmpct, which must happen
+    // between VERSION and VERACK.
     if (msg_type == NetMsgType::SENDCMPCT) {
         bool fAnnounceUsingCMPCTBLOCK = false;
         uint64_t nCMPCTBLOCKVersion = 0;
@@ -2731,8 +2733,8 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
             }
             if (State(pfrom.GetId())->fWantsCmpctWitness == (nCMPCTBLOCKVersion == 2)) { // ignore later version announces
                 State(pfrom.GetId())->fPreferHeaderAndIDs = fAnnounceUsingCMPCTBLOCK;
-                // save whether peer selects us as BIP152 high-bandwidth peer
-                // (receiving sendcmpct(1) signals high-bandwidth, sendcmpct(0) low-bandwidth)
+                // Save whether the peer selected us for BIP152 high bandwidth mode:
+                // receiving sendcmpct(1) signals high bandwidth mode, sendcmpct(0) low bandwidth mode.
                 pfrom.m_bip152_highbandwidth_from = fAnnounceUsingCMPCTBLOCK;
             }
             if (!State(pfrom.GetId())->fSupportsDesiredCmpctVersion) {
