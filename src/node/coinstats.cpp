@@ -127,9 +127,9 @@ static bool GetUTXOStats(CCoinsView* view, BlockManager& blockman, CCoinsStats& 
     return true;
 }
 
-bool GetUTXOStats(CCoinsView* view, BlockManager& blockman, CCoinsStats& stats, CoinStatsHashType hash_type, const std::function<void()>& interruption_point)
+bool GetUTXOStats(CCoinsView* view, BlockManager& blockman, CCoinsStats& stats, const std::function<void()>& interruption_point)
 {
-    switch (hash_type) {
+    switch (stats.m_hash_type) {
     case(CoinStatsHashType::HASH_SERIALIZED): {
         CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
         return GetUTXOStats(view, blockman, stats, ss, interruption_point);
