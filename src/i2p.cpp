@@ -69,9 +69,9 @@ static Binary DecodeI2PBase64(const std::string& i2p_b64)
 {
     const std::string& std_b64 = SwapBase64(i2p_b64);
     bool invalid;
-    Binary decoded = DecodeBase64(std_b64.c_str(), &invalid);
+    Binary decoded{DecodeBase64(std_b64.c_str(), &invalid)};
     if (invalid) {
-        throw std::runtime_error(strprintf("Cannot decode Base64: '%s'", i2p_b64));
+        throw std::runtime_error(strprintf("Cannot decode Base64: \"%s\"", i2p_b64));
     }
     return decoded;
 }
@@ -90,9 +90,9 @@ static CNetAddr DestBinToAddr(const Binary& dest)
     hasher.Finalize(hash);
 
     CNetAddr addr;
-    const std::string addr_str = EncodeBase32(hash, false) + ".b32.i2p";
+    const std::string addr_str{EncodeBase32(hash, false) + ".b32.i2p"};
     if (!addr.SetSpecial(addr_str)) {
-        throw std::runtime_error(strprintf("Cannot parse I2P address: '%s'", addr_str));
+        throw std::runtime_error(strprintf("Cannot parse I2P address: \"%s\"", addr_str));
     }
 
     return addr;
@@ -106,7 +106,7 @@ static CNetAddr DestBinToAddr(const Binary& dest)
  */
 static CNetAddr DestB64ToAddr(const std::string& dest)
 {
-    const Binary& decoded = DecodeI2PBase64(dest);
+    const Binary& decoded{DecodeI2PBase64(dest)};
     return DestBinToAddr(decoded);
 }
 
@@ -183,16 +183,16 @@ bool Session::Connect(const CService& to, Connection& conn, bool& proxy_error)
             sock = Hello();
         }
 
-        const Reply& lookup_reply =
-            SendRequestAndGetReply(sock, strprintf("NAMING LOOKUP NAME=%s", to.ToStringIP()));
+        const Reply& lookup_reply{
+            SendRequestAndGetReply(sock, strprintf("NAMING LOOKUP NAME=%s", to.ToStringIP()))};
 
-        const std::string& dest = lookup_reply.Get("VALUE");
+        const std::string& dest{lookup_reply.Get("VALUE")};
 
-        const Reply& connect_reply = SendRequestAndGetReply(
+        const Reply& connect_reply{SendRequestAndGetReply(
             sock, strprintf("STREAM CONNECT ID=%s DESTINATION=%s SILENT=false", session_id, dest),
-            false);
+            false)};
 
-        const std::string& result = connect_reply.Get("RESULT");
+        const std::string& result{connect_reply.Get("RESULT")};
 
         if (result == "OK") {
             conn.sock = std::move(sock);
@@ -209,7 +209,7 @@ bool Session::Connect(const CService& to, Connection& conn, bool& proxy_error)
             proxy_error = false;
         }
 
-        throw std::runtime_error(strprintf("'%s'", connect_reply.full));
+        throw std::runtime_error(strprintf("\"%s\"", connect_reply.full));
     } catch (const std::runtime_error& e) {
         Log("Error connecting to %s: %s", to.ToString(), e.what());
         CheckControlSock();
@@ -224,7 +224,7 @@ std::string Session::Reply::Get(const std::string& key) const
     const auto& pos = keys.find(key);
     if (pos == keys.end() || !pos->second.has_value()) {
         throw std::runtime_error(
-            strprintf("Missing %s= in the reply to '%s': '%s'", key, request, full));
+            strprintf("Missing %s= in the reply to \"%s\": \"%s\"", key, request, full));
     }
     return pos->second.value();
 }
@@ -264,7 +264,7 @@ Session::Reply Session::SendRequestAndGetReply(const Sock& sock,
     }
 
     if (check_result_ok && reply.Get("RESULT") != "OK") {
-        throw std::runtime_error(strprintf("Unexpected reply to '%s': '%s'", request, reply.full));
+        throw std::runtime_error(strprintf("Unexpected reply to \"%s\": \"%s\"", request, reply.full));
     }
 
     return reply;
@@ -303,7 +303,7 @@ void Session::DestGenerate(const Sock& sock)
     // https://geti2p.net/spec/common-structures#key-certificates
     // "7" or "EdDSA_SHA512_Ed25519" - "Recent Router Identities and Destinations".
     // Use "7" because i2pd <2.24.0 does not recognize the textual form.
-    const Reply& reply = SendRequestAndGetReply(sock, "DEST GENERATE SIGNATURE_TYPE=7", false);
+    const Reply& reply{SendRequestAndGetReply(sock, "DEST GENERATE SIGNATURE_TYPE=7", false)};
 
     m_private_key = DecodeI2PBase64(reply.Get("PRIV"));
 }
@@ -314,7 +314,7 @@ void Session::GenerateAndSavePrivateKey(const Sock& sock)
 
     // umask is set to 077 in init.cpp, which is ok (unless -sysperms is given)
     if (!WriteBinaryFile(m_private_key_file,
-                         std::string(m_private_key.begin(), m_private_key.end()))) {
+                         std::string{m_private_key.begin(), m_private_key.end()})) {
         throw std::runtime_error(
             strprintf("Cannot save I2P private key to %s", m_private_key_file));
     }
@@ -332,7 +332,7 @@ Binary Session::MyDestination() const
     memcpy(&cert_len, &m_private_key.at(CERT_LEN_POS), sizeof(cert_len));
     cert_len = be16toh(cert_len);
 
-    const size_t dest_len = DEST_LEN_BASE + cert_len;
+    const size_t dest_len{DEST_LEN_BASE + cert_len};
 
     return Binary{m_private_key.begin(), m_private_key.begin() + dest_len};
 }
@@ -355,13 +355,13 @@ void Session::CreateIfNotCreatedAlready()
         GenerateAndSavePrivateKey(sock);
     }
 
-    const std::string& session_id = GetRandHash().GetHex().substr(0, 10); // full is an overkill, too verbose in the logs
-    const std::string& private_key_b64 = SwapBase64(EncodeBase64(m_private_key));
+    const std::string& session_id{GetRandHash().GetHex().substr(0, 10)}; // full is an overkill, too verbose in the logs
+    const std::string& private_key_b64{SwapBase64(EncodeBase64(m_private_key))};
 
     SendRequestAndGetReply(sock, strprintf("SESSION CREATE STYLE=STREAM ID=%s DESTINATION=%s",
                                            session_id, private_key_b64));
 
-    m_my_addr = CService(DestBinToAddr(MyDestination()), Params().GetDefaultPort());
+    m_my_addr = CService{DestBinToAddr(MyDestination()), static_cast<uint16_t>(Params().GetDefaultPort())};
     m_session_id = session_id;
     m_control_sock = std::move(sock);
 
@@ -376,7 +376,7 @@ Sock Session::StreamAccept()
     const Reply& reply = SendRequestAndGetReply(
         sock, strprintf("STREAM ACCEPT ID=%s SILENT=false", m_session_id), false);
 
-    const std::string& result = reply.Get("RESULT");
+    const std::string& result{reply.Get("RESULT")};
 
     if (result == "OK") {
         return sock;
@@ -387,7 +387,7 @@ Sock Session::StreamAccept()
         Disconnect();
     }
 
-    throw std::runtime_error(strprintf("'%s'", reply.full));
+    throw std::runtime_error(strprintf("\"%s\"", reply.full));
 }
 
 void Session::Disconnect()

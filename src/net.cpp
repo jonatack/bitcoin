@@ -2664,11 +2664,11 @@ std::vector<CAddress> CConnman::GetAddresses(size_t max_addresses, size_t max_pc
 
 std::vector<CAddress> CConnman::GetAddresses(CNode& requestor, size_t max_addresses, size_t max_pct)
 {
-    auto local_socket_bytes = requestor.addrBind.GetAddrBytes();
-    uint64_t cache_id = GetDeterministicRandomizer(RANDOMIZER_ID_ADDRCACHE)
+    std::vector<unsigned char> local_socket_bytes{requestor.addrBind.GetAddrBytes()};
+    uint64_t cache_id{GetDeterministicRandomizer(RANDOMIZER_ID_ADDRCACHE)
         .Write(requestor.addr.GetNetwork())
         .Write(local_socket_bytes.data(), local_socket_bytes.size())
-        .Finalize();
+        .Finalize()};
     const auto current_time = GetTime<std::chrono::microseconds>();
     auto r = m_addr_response_caches.emplace(cache_id, CachedAddrResponse{});
     CachedAddrResponse& cache_entry = r.first->second;

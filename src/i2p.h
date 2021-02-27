@@ -195,7 +195,7 @@ private:
     void CreateIfNotCreatedAlready() EXCLUSIVE_LOCKS_REQUIRED(m_mutex);
 
     /**
-     * Open a new connection to the SAM proxy and issue "STREAM ACCEPT" request using the existent
+     * Open a new connection to the SAM proxy and issue "STREAM ACCEPT" request using the existing
      * session id. Return the idle socket that is waiting for a peer to connect to us.
      * @throws std::runtime_error if an error occurs
      */
@@ -243,7 +243,7 @@ private:
     Sock m_control_sock GUARDED_BY(m_mutex);
 
     /**
-     * The .b32.i2p address of this peer.
+     * Our .b32.i2p address.
      * Derived from `m_private_key`.
      */
     CService m_my_addr GUARDED_BY(m_mutex);

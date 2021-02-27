@@ -140,7 +140,7 @@ void Sock::SendComplete(const std::string& data,
     size_t sent{0};
 
     for (;;) {
-        const ssize_t ret = Send(data.data() + sent, data.size() - sent, MSG_NOSIGNAL);
+        const ssize_t ret{Send(data.data() + sent, data.size() - sent, MSG_NOSIGNAL)};
 
         if (ret > 0) {
             sent += static_cast<size_t>(ret);
@@ -192,7 +192,7 @@ std::string Sock::RecvUntilTerminator(uint8_t terminator,
     for (;;) {
         char buf[512];
 
-        const ssize_t peek_ret = Recv(buf, sizeof(buf), MSG_PEEK);
+        const ssize_t peek_ret{Recv(buf, sizeof(buf), MSG_PEEK)};
 
         switch (peek_ret) {
         case -1: {
@@ -212,7 +212,7 @@ std::string Sock::RecvUntilTerminator(uint8_t terminator,
             const size_t try_len =
                 terminator_found ? terminator_pos - buf + 1 : static_cast<size_t>(peek_ret);
 
-            const ssize_t read_ret = Recv(buf, try_len, 0);
+            const ssize_t read_ret{Recv(buf, try_len, 0)};
 
             if (static_cast<size_t>(read_ret) != try_len) {
                 throw std::runtime_error(
@@ -222,7 +222,7 @@ std::string Sock::RecvUntilTerminator(uint8_t terminator,
             }
 
             // Don't include the terminator in the output.
-            const size_t append_len = terminator_found ? read_ret - 1 : read_ret;
+            const size_t append_len{static_cast<size_t>(terminator_found ? read_ret - 1 : read_ret)};
 
             data.append(buf, buf + append_len);
 
