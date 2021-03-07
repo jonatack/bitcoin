@@ -23,7 +23,7 @@ class WalletGroupTest(BitcoinTestFramework):
             ["-maxapsfee=0.00002719"],
             ["-maxapsfee=0.00002720"],
         ]
-        self.rpc_timeout = 480
+        self.rpc_timeout = 960
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -31,7 +31,7 @@ class WalletGroupTest(BitcoinTestFramework):
     def run_test(self):
         self.log.info("Setting up")
         # Mine some coins
-        self.nodes[0].generate(110)
+        self.nodes[0].generate(101)
 
         # Get some addresses from the two nodes
         addr1 = [self.nodes[1].getnewaddress() for _ in range(3)]
