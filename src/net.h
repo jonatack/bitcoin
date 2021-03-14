@@ -86,6 +86,7 @@ static const bool DEFAULT_DNSSEED = true;
 static const bool DEFAULT_FIXEDSEEDS = true;
 static const size_t DEFAULT_MAXRECEIVEBUFFER = 5 * 1000;
 static const size_t DEFAULT_MAXSENDBUFFER    = 1 * 1000;
+static const std::string DEFAULT_I2P_SAM{"127.0.0.1:7656"};
 
 typedef int64_t NodeId;
 
