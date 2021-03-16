@@ -141,17 +141,22 @@ static constexpr auto AVG_ADDRESS_BROADCAST_INTERVAL{30s};
 /** Delay between rotating the peers we relay a particular address to */
 static constexpr auto ROTATE_ADDR_RELAY_DEST_INTERVAL{24h};
 /** Average delay between trickled inventory transmissions for inbound peers.
- *  Blocks and peers with NetPermissionFlags::NoBan permission bypass this. */
+ *  Blocks and peers with NetPermissionFlags::NoBan permission bypass this.
+ *  For reconciliation peers the delay is different. */
 static constexpr auto INBOUND_INVENTORY_BROADCAST_INTERVAL{5s};
+static constexpr auto INBOUND_INVENTORY_BROADCAST_INTERVAL_RECON{2s};
 /** Average delay between trickled inventory transmissions for outbound peers.
  *  Use a smaller delay as there is less privacy concern for them.
- *  Blocks and peers with NetPermissionFlags::NoBan permission bypass this. */
+ *  Blocks and peers with NetPermissionFlags::NoBan permission bypass this.
+ *  For reconciliation peers the delay is different. */
 static constexpr auto OUTBOUND_INVENTORY_BROADCAST_INTERVAL{2s};
+static constexpr auto OUTBOUND_INVENTORY_BROADCAST_INTERVAL_RECON{1s};
 /** Maximum rate of inventory items to send per second.
  *  Limits the impact of low-fee transaction floods. */
 static constexpr unsigned int INVENTORY_BROADCAST_PER_SECOND = 7;
 /** Maximum number of inventory items to send per transmission. */
-static constexpr unsigned int INVENTORY_BROADCAST_MAX = INVENTORY_BROADCAST_PER_SECOND * count_seconds(INBOUND_INVENTORY_BROADCAST_INTERVAL);
+static constexpr unsigned int INVENTORY_BROADCAST_MAX = INVENTORY_BROADCAST_PER_SECOND *
+    count_seconds(std::max(INBOUND_INVENTORY_BROADCAST_INTERVAL, INBOUND_INVENTORY_BROADCAST_INTERVAL_RECON));
 /** The number of most recently announced transactions a peer can request. */
 static constexpr unsigned int INVENTORY_MAX_RECENT_RELAY = 3500;
 /** Verify that INVENTORY_MAX_RECENT_RELAY is enough to cache everything typically
@@ -4934,12 +4939,29 @@ bool PeerManagerImpl::SendMessages(CNode* pto)
                 LOCK(peer->m_tx_relay->m_tx_inventory_mutex);
                 // Check whether periodic sends should happen
                 bool fSendTrickle = pto->HasPermission(NetPermissionFlags::NoBan);
+                const bool supports_recon = m_reconciliation.IsPeerRegistered(pto->GetId());
                 if (peer->m_tx_relay->m_next_inv_send_time < current_time) {
                     fSendTrickle = true;
                     if (pto->IsInboundConn()) {
-                        peer->m_tx_relay->m_next_inv_send_time = NextInvToInbounds(current_time, INBOUND_INVENTORY_BROADCAST_INTERVAL);
+                        if (supports_recon) {
+                            // Use shorter intervals for reconciliation peers because we use
+                            // low-fanout, and 1) we need to make faster; 2) we won't get much
+                            // inefficiency due to low intervals and announcing both ways
+                            // simultaneously.
+
+                            // Don't batch for inbound reconciling peers, because sending sketches
+                            // out is batched already, and low-fanout won't give much info because
+                            // it's low probability and is not controlled by the attacker.
+                            peer->m_tx_relay->m_next_inv_send_time =
+                                GetExponentialRand(current_time, INBOUND_INVENTORY_BROADCAST_INTERVAL_RECON);
+                        } else {
+                            peer->m_tx_relay->m_next_inv_send_time =
+                                NextInvToInbounds(current_time, INBOUND_INVENTORY_BROADCAST_INTERVAL);
+                        }
                     } else {
-                        peer->m_tx_relay->m_next_inv_send_time = GetExponentialRand(current_time, OUTBOUND_INVENTORY_BROADCAST_INTERVAL);
+                        // Use smaller delay for outbound peers, as there is less privacy concern for them.
+                        const auto interval{supports_recon ? OUTBOUND_INVENTORY_BROADCAST_INTERVAL_RECON : OUTBOUND_INVENTORY_BROADCAST_INTERVAL};
+                        peer->m_tx_relay->m_next_inv_send_time = GetExponentialRand(current_time, interval);
                     }
                 }
 
@@ -5031,7 +5053,7 @@ bool PeerManagerImpl::SendMessages(CNode* pto)
 
                         bool adding_to_recon_set = false;
                         // Check if peer supports reconciliations.
-                        if (m_reconciliation.IsPeerRegistered(pto->GetId())) {
+                        if (supports_recon) {
                             bool flood_target = m_reconciliation.ShouldFloodTo(wtxid, pto->GetId());
 
                             // Special treatment for unconfirmed transactions with unconfirmed
