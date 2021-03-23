@@ -35,6 +35,7 @@ private:
     CAmount m_unspendables_unclaimed_rewards{0};
 
     bool ReverseBlock(const CBlock& block, const CBlockIndex* pindex);
+
 protected:
     bool Init() override;
 
