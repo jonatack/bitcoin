@@ -128,18 +128,18 @@ static int ComputeNextBlockAndDepth(const CBlockIndex* tip, const CBlockIndex* b
 
 CBlockIndex* ParseHashOrHeight(const UniValue& param) {
     if (param.isNum()) {
-        const int height = param.get_int();
-        const int current_tip = ::ChainActive().Height();
+        const int height{param.get_int()};
         if (height < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Target block height %d is negative", height));
         }
+        const int current_tip{::ChainActive().Height()};
         if (height > current_tip) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Target block height %d after current tip %d", height, current_tip));
         }
 
         return ::ChainActive()[height];
     } else {
-        const uint256 hash(ParseHashV(param, "hash_or_height"));
+        const uint256 hash{ParseHashV(param, "hash_or_height")};
         CBlockIndex* pindex;
         {
             LOCK(cs_main);
@@ -1072,9 +1072,9 @@ static RPCHelpMan gettxoutsetinfo()
                 "\nReturns statistics about the unspent transaction output set.\n"
                 "Note this call may take some time if you are not using coinstatsindex.\n",
                 {
-                    {"hash_type", RPCArg::Type::STR, /* default */ "hash_serialized_2", "Which UTXO set hash should be calculated. Options: 'hash_serialized_2' (the legacy algorithm), 'muhash', 'none'."},
+                    {"hash_type", RPCArg::Type::STR, /* default */ "hash_serialized_2", "Which UTXO set hash should be calculated. Options: 'hash_serialized_2' (the legacy algorithm), 'muhash', 'none'"},
                     {"hash_or_height", RPCArg::Type::NUM, RPCArg::Optional::OMITTED, "The block hash or height of the target height (only available with coinstatsindex)", "", {"", "string or numeric"}},
-                    {"use_index", RPCArg::Type::BOOL, /* default */ "true", "Use Coinstatsindex even when it is available."},
+                    {"use_index", RPCArg::Type::BOOL, /* default */ "true", "Use coinstatsindex, if available"},
                 },
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
@@ -1108,7 +1108,7 @@ static RPCHelpMan gettxoutsetinfo()
                     HelpExampleCli("gettxoutsetinfo", "") +
                     HelpExampleCli("gettxoutsetinfo", R"("none")") +
                     HelpExampleCli("gettxoutsetinfo", R"("none" 1000)") +
-                    HelpExampleCli("gettxoutsetinfo", R"("none" "00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09")") +
+                    HelpExampleCli("gettxoutsetinfo", R"("none" '"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"')") +
                     HelpExampleRpc("gettxoutsetinfo", "") +
                     HelpExampleRpc("gettxoutsetinfo", R"("none")") +
                     HelpExampleRpc("gettxoutsetinfo", R"("none", 1000)") +
@@ -1120,7 +1120,7 @@ static RPCHelpMan gettxoutsetinfo()
 
     ::ChainstateActive().ForceFlushStateToDisk();
     CBlockIndex* pindex{nullptr};
-    CCoinsView* coins_view = WITH_LOCK(cs_main, return &ChainstateActive().CoinsDB());
+    CCoinsView* coins_view{WITH_LOCK(::cs_main, return &ChainstateActive().CoinsDB())};
 
     const CoinStatsHashType hash_type{request.params[0].isNull() ? CoinStatsHashType::HASH_SERIALIZED : ParseHashType(request.params[0].get_str())};
     CCoinsStats stats{hash_type};
@@ -1129,7 +1129,7 @@ static RPCHelpMan gettxoutsetinfo()
 
     if (!request.params[1].isNull()) {
         if (!g_coin_stats_index) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Querying specific block heights requires CoinStatsIndex");
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Querying specific block heights requires coinstatsindex");
         }
 
         if (stats.m_hash_type == CoinStatsHashType::HASH_SERIALIZED) {
@@ -1158,7 +1158,7 @@ static RPCHelpMan gettxoutsetinfo()
         }
         ret.pushKV("total_amount", ValueFromAmount(stats.nTotalAmount));
         if (!stats.from_index) {
-            ret.pushKV("transactions", (int64_t)stats.nTransactions);
+            ret.pushKV("transactions", static_cast<int64_t>(stats.nTransactions));
             ret.pushKV("disk_size", stats.nDiskSize);
         } else {
             ret.pushKV("total_unspendable_amount", ValueFromAmount(stats.block_unspendable_amount));
@@ -1888,7 +1888,7 @@ static constexpr size_t PER_UTXO_OVERHEAD = sizeof(COutPoint) + sizeof(uint32_t)
 static RPCHelpMan getblockstats()
 {
     return RPCHelpMan{"getblockstats",
-                "\nCompute per block statistics for a given window. All amounts are in satoshis.\n"
+                "\nCompute statistics per block for a given window. All amounts are in satoshis.\n"
                 "It won't work for some heights with pruning.\n",
                 {
                     {"hash_or_height", RPCArg::Type::NUM, RPCArg::Optional::NO, "The block hash or height of the target block", "", {"", "string or numeric"}},
@@ -1948,7 +1948,7 @@ static RPCHelpMan getblockstats()
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
     LOCK(cs_main);
-    CBlockIndex* pindex = ParseHashOrHeight(request.params[0]);
+    CBlockIndex* pindex{ParseHashOrHeight(request.params[0])};
     CHECK_NONFATAL(pindex != nullptr);
 
     std::set<std::string> stats;

@@ -112,7 +112,7 @@ class CoinStatsIndexTest(BitcoinTestFramework):
             assert_equal(res0, res3)
 
             # It does not work without coinstatsindex
-            assert_raises_rpc_error(-8, "Querying specific block heights requires CoinStatsIndex", node.gettxoutsetinfo, hash_option, 102)
+            assert_raises_rpc_error(-8, "Querying specific block heights requires coinstatsindex", node.gettxoutsetinfo, hash_option, 102)
 
         self.log.info("Test gettxoutsetinfo() with index and verbose flag")
 
