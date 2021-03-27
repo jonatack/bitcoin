@@ -16,14 +16,14 @@
 
 #include <map>
 
-uint64_t GetBogoSize(const CScript& scriptPubKey)
+uint64_t GetBogoSize(const CScript& script_pub_key)
 {
     return 32 /* txid */ +
            4 /* vout index */ +
            4 /* height + coinbase */ +
            8 /* amount */ +
            2 /* scriptPubKey len */ +
-           scriptPubKey.size() /* scriptPubKey */;
+           script_pub_key.size() /* scriptPubKey */;
 }
 
 CDataStream TxOutSer(const COutPoint& outpoint, const Coin& coin) {
@@ -105,7 +105,7 @@ static bool GetUTXOStats(CCoinsView* view, BlockManager& blockman, CCoinsStats& 
 
     // Use CoinStatsIndex if it is available and hash_type none was requested
     if ((stats.m_hash_type == CoinStatsHashType::MUHASH || stats.m_hash_type == CoinStatsHashType::NONE) && g_coin_stats_index && stats.from_index) {
-        return g_coin_stats_index->LookupStats(pindex, stats);
+        return g_coin_stats_index->LookUpStats(pindex, stats);
     }
     stats.from_index = false;
 
