@@ -103,7 +103,7 @@ static bool GetUTXOStats(CCoinsView* view, BlockManager& blockman, CCoinsStats& 
     stats.hashBlock = pindex->GetBlockHash();
     stats.nHeight = pindex->nHeight;
 
-    // Use CoinStatsIndex if it is available and hash_type none was requested
+    // Use CoinStatsIndex if it is available and a hash type of Muhash or None was requested.
     if ((stats.m_hash_type == CoinStatsHashType::MUHASH || stats.m_hash_type == CoinStatsHashType::NONE) && g_coin_stats_index && stats.from_index) {
         return g_coin_stats_index->LookUpStats(pindex, stats);
     }
