@@ -189,7 +189,7 @@ bool CoinStatsIndex::WriteBlock(const CBlock& block, const CBlockIndex* pindex)
         m_unspendables_genesis_block += block_subsidy;
     }
 
-    // If spent prevouts + bock subsidy are still a higher amount than
+    // If spent prevouts + block subsidy are still a higher amount than
     // new outputs + coinbase + current unspendable amount this means
     // the miner did not claim the full block reward. Unclaimed block
     // rewards are also unspendable.
@@ -417,7 +417,7 @@ bool CoinStatsIndex::ReverseBlock(const CBlock& block, const CBlockIndex* pindex
                 m_block_new_outputs_ex_coinbase_amount -= coin.out.nValue;
             }
 
-            m_transaction_output_count--;
+            --m_transaction_output_count;
             m_total_amount -= coin.out.nValue;
             m_bogo_size -= GetBogoSize(coin.out.scriptPubKey);
         }
