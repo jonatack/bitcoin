@@ -231,7 +231,6 @@ class CoinStatsIndexTest(BitcoinTestFramework):
 
         res8 = index_node.gettxoutsetinfo('muhash')
         self.restart_node(1, extra_args=self.extra_args[1])
-        self.connect_nodes(0, 1) # necessary for follow-up tests
         res9 = index_node.gettxoutsetinfo('muhash')
         assert_equal(res8, res9)
 
@@ -242,10 +241,10 @@ class CoinStatsIndexTest(BitcoinTestFramework):
 
     def _test_use_index_option(self):
         self.log.info("Test use_index option for nodes running the index")
-
+        self.connect_nodes(0, 1)
         self.nodes[0].waitforblockheight(110)
         res = self.nodes[0].gettxoutsetinfo('muhash')
-        option_res = self.nodes[1].gettxoutsetinfo('muhash', None, False)
+        option_res = self.nodes[1].gettxoutsetinfo(hash_type='muhash', hash_or_height=None, use_index=False)
         del res['disk_size'], option_res['disk_size']
         assert_equal(res, option_res)
 

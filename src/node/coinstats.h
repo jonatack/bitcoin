@@ -42,6 +42,9 @@ struct CCoinsStats
     //! Initially signals if the index should be used (when available) for
     //! catching the values for this Coinstats object. After the values
     //! are added it signals if the index was actually used or not.
+
+    //! bools are very cheap types; it might be clearer to use 2 here,
+    //! e.g. `use_index` and `index_used`
     bool from_index{true};
 
     // Following values are only available from coinstats index
