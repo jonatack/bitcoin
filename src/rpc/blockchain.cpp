@@ -1133,7 +1133,7 @@ static RPCHelpMan gettxoutsetinfo()
         }
 
         if (stats.m_hash_type == CoinStatsHashType::HASH_SERIALIZED) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "hash_serialized_2 hash type can not be queried for a specific block");
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "hash_serialized_2 hash type cannot be queried for a specific block");
         }
 
         pindex = ParseHashOrHeight(request.params[1]);

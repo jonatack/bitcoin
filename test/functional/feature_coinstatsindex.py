@@ -299,10 +299,11 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         assert_raises_rpc_error(-32603, "Unable to read UTXO set", node.gettxoutsetinfo, hash_type='muhash', hash_or_height=reorg_block)
 
     def _test_index_rejects_hash_serialized(self):
-        self.log.info("Test that the rpc rejects trying to use the legacy hash with the index")
-
-        assert_raises_rpc_error(-8, "hash_serialized_2 hash type can not be queried for a specific block", self.nodes[1].gettxoutsetinfo, 'hash_serialized_2', 111)
-        assert_raises_rpc_error(-8, "hash_serialized_2 hash type can not be queried for a specific block", self.nodes[1].gettxoutsetinfo, 'hash_serialized_2', 111, False)
+        self.log.info("Test that the rpc raises if the legacy hash is passed with the index")
+        msg = "hash_serialized_2 hash type cannot be queried for a specific block"
+        assert_raises_rpc_error(-8, msg, self.nodes[1].gettxoutsetinfo, hash_type='hash_serialized_2', hash_or_height=111)
+        for use_index in {True, False, None}:
+            assert_raises_rpc_error(-8, msg, self.nodes[1].gettxoutsetinfo, hash_type='hash_serialized_2', hash_or_height=111, use_index=use_index)
 
 
 if __name__ == '__main__':
