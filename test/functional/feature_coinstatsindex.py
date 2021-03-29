@@ -263,16 +263,16 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         # Add two new blocks
         block = index_node.generate(2)[1]
         self.wait_until(lambda: not try_rpc(-32603, "Unable to read UTXO set", index_node.gettxoutsetinfo, 'muhash'))
-        res = index_node.gettxoutsetinfo('muhash', None, False)
+        res = index_node.gettxoutsetinfo(hash_type='muhash', hash_or_height=None, use_index=False)
 
         # Test that the result of the reorged block is not returned for its old block height
-        res2 = index_node.gettxoutsetinfo('muhash', 112)
+        res2 = index_node.gettxoutsetinfo(hash_type='muhash', hash_or_height=112)
         assert_equal(res["bestblock"], block)
         assert_equal(res["muhash"], res2["muhash"])
         assert(res["muhash"] != res_invalid["muhash"])
 
         # Test that requesting reorged out block by hash is still returning correct results
-        res_invalid2 = index_node.gettxoutsetinfo('muhash', reorg_block)
+        res_invalid2 = index_node.gettxoutsetinfo(hash_type='muhash', hash_or_height=reorg_block)
         assert_equal(res_invalid2["muhash"], res_invalid["muhash"])
         assert(res["muhash"] != res_invalid2["muhash"])
 
@@ -286,7 +286,7 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         self.wait_until(lambda: not try_rpc(-32603, "Unable to read UTXO set", index_node.gettxoutsetinfo, 'muhash'))
         index_node.reconsiderblock(block)
         self.wait_until(lambda: not try_rpc(-32603, "Unable to read UTXO set", index_node.gettxoutsetinfo, 'muhash'))
-        res3 = index_node.gettxoutsetinfo('muhash', 112)
+        res3 = index_node.gettxoutsetinfo(hash_type='muhash', hash_or_height=112)
         assert_equal(res2, res3)
 
         self.log.info("Test that a node aware of stale blocks syncs them as well")
@@ -295,14 +295,15 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         node.getblock(reorg_block)
 
         self.restart_node(0, ["-coinstatsindex"])
-        self.wait_until(lambda: not try_rpc(-32603, "Unable to read UTXO set", node.gettxoutsetinfo, 'muhash'))
-        assert_raises_rpc_error(-32603, "Unable to read UTXO set", node.gettxoutsetinfo, 'muhash', reorg_block)
+        self.wait_until(lambda: not try_rpc(-32603, "Unable to read UTXO set", node.gettxoutsetinfo, hash_type='muhash'))
+        assert_raises_rpc_error(-32603, "Unable to read UTXO set", node.gettxoutsetinfo, hash_type='muhash', hash_or_height=reorg_block)
 
     def _test_index_rejects_hash_serialized(self):
         self.log.info("Test that the rpc rejects trying to use the legacy hash with the index")
 
         assert_raises_rpc_error(-8, "hash_serialized_2 hash type can not be queried for a specific block", self.nodes[1].gettxoutsetinfo, 'hash_serialized_2', 111)
         assert_raises_rpc_error(-8, "hash_serialized_2 hash type can not be queried for a specific block", self.nodes[1].gettxoutsetinfo, 'hash_serialized_2', 111, False)
+
 
 if __name__ == '__main__':
     CoinStatsIndexTest().main()
