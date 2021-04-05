@@ -23,6 +23,7 @@
 #include <util/strencodings.h>
 #include <util/string.h>
 #include <util/system.h>
+#include <util/time.h>
 #include <util/translation.h>
 #include <validation.h>
 #include <version.h>
@@ -767,6 +768,7 @@ static RPCHelpMan listbanned()
 
     banmap_t banMap;
     node.banman->GetBanned(banMap);
+    int64_t current_time = GetTime();
 
     UniValue bannedAddresses(UniValue::VARR);
     for (const auto& entry : banMap)
@@ -777,6 +779,7 @@ static RPCHelpMan listbanned()
         rec.pushKV("banned_until", banEntry.nBanUntil);
         rec.pushKV("ban_created", banEntry.nCreateTime);
         rec.pushKV("ban_time", (banEntry.nBanUntil - banEntry.nCreateTime));
+        rec.pushKV("ban_time_remaining", (banEntry.nBanUntil - current_time));
 
         bannedAddresses.push_back(rec);
     }
