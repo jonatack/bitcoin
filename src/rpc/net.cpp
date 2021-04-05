@@ -776,6 +776,7 @@ static RPCHelpMan listbanned()
         rec.pushKV("address", entry.first.ToString());
         rec.pushKV("banned_until", banEntry.nBanUntil);
         rec.pushKV("ban_created", banEntry.nCreateTime);
+        rec.pushKV("ban_time", (banEntry.nBanUntil - banEntry.nCreateTime));
 
         bannedAddresses.push_back(rec);
     }
