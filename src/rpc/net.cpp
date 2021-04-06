@@ -751,10 +751,10 @@ static RPCHelpMan listbanned()
                 {RPCResult::Type::OBJ, "", "",
                     {
                         {RPCResult::Type::STR, "address", "The IP/Subnet of the banned node"},
-                        {RPCResult::Type::NUM_TIME, "banned_until", "The " + UNIX_EPOCH_TIME + " the node is banned until"},
                         {RPCResult::Type::NUM_TIME, "ban_created", "The " + UNIX_EPOCH_TIME + " the ban was created"},
-                        {RPCResult::Type::NUM_TIME, "ban_time", "The ban duration, in seconds"},
-                        {RPCResult::Type::NUM_TIME, "ban_time_remaining", "The amount of seconds until the ban expires"},
+                        {RPCResult::Type::NUM_TIME, "banned_until", "The " + UNIX_EPOCH_TIME + " the ban expires"},
+                        {RPCResult::Type::NUM_TIME, "ban_duration", "The ban duration, in seconds"},
+                        {RPCResult::Type::NUM_TIME, "time_remaining", "The time remaining until the ban expires, in seconds"},
                     }},
             }},
                 RPCExamples{
@@ -770,7 +770,7 @@ static RPCHelpMan listbanned()
 
     banmap_t banMap;
     node.banman->GetBanned(banMap);
-    int64_t current_time = GetTime();
+    const int64_t current_time{GetTime()};
 
     UniValue bannedAddresses(UniValue::VARR);
     for (const auto& entry : banMap)
@@ -778,10 +778,10 @@ static RPCHelpMan listbanned()
         const CBanEntry& banEntry = entry.second;
         UniValue rec(UniValue::VOBJ);
         rec.pushKV("address", entry.first.ToString());
-        rec.pushKV("banned_until", banEntry.nBanUntil);
         rec.pushKV("ban_created", banEntry.nCreateTime);
-        rec.pushKV("ban_time", (banEntry.nBanUntil - banEntry.nCreateTime));
-        rec.pushKV("ban_time_remaining", (banEntry.nBanUntil - current_time));
+        rec.pushKV("banned_until", banEntry.nBanUntil);
+        rec.pushKV("ban_duration", (banEntry.nBanUntil - banEntry.nCreateTime));
+        rec.pushKV("time_remaining", (banEntry.nBanUntil - current_time));
 
         bannedAddresses.push_back(rec);
     }
