@@ -3446,7 +3446,7 @@ static RPCHelpMan bumpfee_helper(std::string method_name)
             })
         },
         RPCExamples{
-    "\nBump the fee, get the new transaction\'s" + std::string(want_psbt ? "psbt" : "txid") + "\n" +
+    "\nBump the fee, get the new transaction\'s " + std::string(want_psbt ? "psbt" : "txid") + "\n" +
             HelpExampleCli(method_name, "<txid>")
         },
         [want_psbt](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
