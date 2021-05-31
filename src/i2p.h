@@ -50,6 +50,11 @@ namespace sam {
 static constexpr size_t MAX_MSG_SIZE{65536};
 
 /**
+ * SAM 3.1 and earlier do not support specifying ports and force the port to 0.
+ */
+static constexpr uint16_t PORT_SAM31{0};
+
+/**
  * I2P SAM session.
  */
 class Session
