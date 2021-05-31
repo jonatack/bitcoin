@@ -2019,8 +2019,10 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
             // from advertising themselves as a service on another host and
             // port, causing a DoS attack as nodes around the network attempt
             // to connect to it fruitlessly.
-            if (addr.GetPort() != Params().GetDefaultPort() && nTries < 50)
+            // Ports in I2P get special treatment, see i2p::sam::Session::Connect() in i2p.cpp.
+            if (!addr.IsI2P() && addr.GetPort() != Params().GetDefaultPort() && nTries < 50) {
                 continue;
+            }
 
             addrConnect = addr;
             break;
