@@ -448,6 +448,8 @@ public:
             LogPrint(BCLog::ADDRMAN, "addrman lost %i new and %i tried addresses due to collisions\n", nLostUnk, nLost);
         }
 
+        ResetI2PPorts();
+
         Check();
     }
 
@@ -755,6 +757,14 @@ private:
 
     //! Update an entry's service bits.
     void SetServices_(const CService &addr, ServiceFlags nServices) EXCLUSIVE_LOCKS_REQUIRED(cs);
+
+    /**
+     * Reset the ports of I2P peers to 0.
+     * This is needed as a temporary measure because now we enforce port 0 and only connect
+     * to I2P hosts if the port is 0, but in the early days some I2P addresses got spread
+     * around with port 8333.
+     */
+    void ResetI2PPorts() EXCLUSIVE_LOCKS_REQUIRED(cs);
 
     friend class CAddrManTest;
 };

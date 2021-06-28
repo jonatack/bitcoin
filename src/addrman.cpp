@@ -6,6 +6,7 @@
 #include <addrman.h>
 
 #include <hash.h>
+#include <i2p.h>
 #include <logging.h>
 #include <netaddress.h>
 #include <serialize.h>
@@ -664,4 +665,89 @@ std::vector<bool> CAddrMan::DecodeAsmap(fs::path path)
         return {};
     }
     return bits;
+}
+
+void CAddrMan::ResetI2PPorts()
+{
+    for (int bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; ++bucket) {
+        for (int i = 0; i < ADDRMAN_BUCKET_SIZE; ++i) {
+            const auto id = vvNew[bucket][i];
+            if (id == -1) {
+                continue;
+            }
+            auto& addr_info = mapInfo[id];
+            if (!addr_info.IsI2P() || addr_info.GetPort() == i2p::sam::PORT_SAM31) {
+                continue;
+            }
+
+            auto addr_info_newport = addr_info;
+            // The below changes addr_info_newport.GetKey() which is used in finding
+            // a bucket and a position within that bucket. So a re-bucketing may be necessary.
+            addr_info_newport.port = i2p::sam::PORT_SAM31;
+
+            // Reposition entries of vvNew within the same bucket because we don't know the source
+            // address which led to the decision to store the entry in vvNew[bucket] so we can't
+            // re-evaluate that decision, but even if we could, CAddrInfo::GetNewBucket() does not
+            // use CAddrInfo::GetKey() so it would end up in the same bucket as before the port
+            // change.
+            const auto i_target = addr_info_newport.GetBucketPosition(nKey, true, bucket);
+
+            if (i_target == i) { // No need to re-position.
+                addr_info = addr_info_newport;
+                continue;
+            }
+
+            // Reposition from i to i_target or delete if the target position is occupied.
+
+            if (vvNew[bucket][i_target] == -1) {
+                vvNew[bucket][i_target] = id;
+                vvNew[bucket][i] = -1;
+                addr_info = addr_info_newport;
+            } else {
+                ClearNew(bucket, i);
+            }
+        }
+    }
+
+    for (int bucket = 0; bucket < ADDRMAN_TRIED_BUCKET_COUNT; ++bucket) {
+        for (int i = 0; i < ADDRMAN_BUCKET_SIZE; ++i) {
+            const auto id = vvTried[bucket][i];
+            if (id == -1) {
+                continue;
+            }
+            auto& addr_info = mapInfo[id];
+            if (!addr_info.IsI2P() || addr_info.GetPort() == i2p::sam::PORT_SAM31) {
+                continue;
+            }
+
+            auto addr_info_newport = addr_info;
+            // The below changes addr_info_newport.GetKey() which is used in finding
+            // a bucket and a position within that bucket. So a re-bucketing may be necessary.
+            addr_info_newport.port = i2p::sam::PORT_SAM31;
+
+            const auto bucket_target = addr_info_newport.GetTriedBucket(nKey, m_asmap);
+            const auto i_target = addr_info_newport.GetBucketPosition(nKey, false, bucket_target);
+
+            if (bucket_target == bucket && i_target == i) { // No need to re-position.
+                addr_info = addr_info_newport;
+                continue;
+            }
+
+            // Reposition from (bucket, i) to (bucket_target, i_target) or delete if the target
+            // position is occupied.
+
+            if (vvTried[bucket_target][i_target] == -1) {
+                vvTried[bucket_target][i_target] = id;
+                vvTried[bucket][i] = -1;
+                addr_info = addr_info_newport;
+            } else {
+                vvTried[bucket][i] = -1;
+                SwapRandom(addr_info.nRandomPos, vRandom.size() - 1);
+                vRandom.pop_back();
+                mapAddr.erase(addr_info);
+                mapInfo.erase(id);
+                --nTried;
+            }
+        }
+    }
 }
