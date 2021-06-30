@@ -934,63 +934,69 @@ BOOST_AUTO_TEST_CASE(reset_i2p_ports)
     const uint32_t good_time{static_cast<uint32_t>(GetAdjustedTime())};
     constexpr uint16_t port = 8333;
 
-    // Gets port changed, will be re-positioned within the same bucket in vvNew.
+    // Has its port changed, will be re-positioned within the same bucket in vvNew.
     const CAddress i2p_new1{
-        ResolveService("72l3ucjkuscrbiiepoehuwqgknyzgo7zuix5ty4puwrkyhtmnsga.b32.i2p", port),
-        NODE_NONE,
-        good_time};
+        /* addr */ ResolveService("72l3ucjkuscrbiiepoehuwqgknyzgo7zuix5ty4puwrkyhtmnsga.b32.i2p", port),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
-    // Gets port changed, will not be re-positioned in vvNew because ports 0 and 10075 result in
-    // the same bucket position.
+    // Has its port changed, will not be re-positioned in vvNew because ports 0
+    // and 10075 result in the same bucket position.
     const CAddress i2p_new2{
-        ResolveService("gehtac45oaghz54ypyopim64mql7oad2bqclla74l6tfeolzmodq.b32.i2p", 10075),
-        NODE_NONE,
-        good_time};
+        /* addr */ ResolveService("gehtac45oaghz54ypyopim64mql7oad2bqclla74l6tfeolzmodq.b32.i2p", 10075),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
     // Remains unchanged, port is already as it should be.
     const CAddress i2p_new3{
-        ResolveService("c4gfnttsuwqomiygupdqqqyy5y5emnk5c73hrfvatri67prd7vyq.b32.i2p",
-                       i2p::sam::PORT_SAM31),
-        NODE_NONE,
-        good_time};
+        /* addr */ ResolveService("c4gfnttsuwqomiygupdqqqyy5y5emnk5c73hrfvatri67prd7vyq.b32.i2p",
+                                  i2p::sam::PORT_SAM31),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
-    // Gets removed because after changing the port it will collide with i2p_new3.
+    // Is removed because after changing the port it will collide with i2p_new3.
     const CAddress i2p_new4{
-        ResolveService("c4cbbkn46qxftwja53pxiykntegfyfjqtnzbm6iv6r5mungmqgmq.b32.i2p", port),
-        NODE_NONE,
-        good_time};
+        /* addr */ ResolveService("c4cbbkn46qxftwja53pxiykntegfyfjqtnzbm6iv6r5mungmqgmq.b32.i2p", port),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
     // Remains unchanged.
-    const CAddress ipv4_new{ResolveService("1.2.3.4", port), NODE_NONE, good_time};
+    const CAddress ipv4_new{
+        /* addr */ ResolveService("1.2.3.4", port),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
-    // Gets port changed, will be re-positioned in vvTried.
+    // Has its port changed, will be re-positioned in vvTried.
     const CAddress i2p_tried1{
-        ResolveService("h3r6bkn46qxftwja53pxiykntegfyfjqtnzbm6iv6r5mungmqgmq.b32.i2p", port),
-        NODE_NONE,
-        good_time};
+        /* addr */ ResolveService("h3r6bkn46qxftwja53pxiykntegfyfjqtnzbm6iv6r5mungmqgmq.b32.i2p", port),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
-    // Gets port changed, will not be re-positioned in vvTried because ports 0 and 10537 result in
-    // the same position (bucket, i).
+    // Has its port changed, will not be re-positioned in vvTried because ports
+    // 0 and 10537 result in the same position (bucket, i).
     const CAddress i2p_tried2{
-        ResolveService("pjs7or2ctvteeo5tu4bwyrtydeuhqhvdprtujn4daxr75jpebjxa.b32.i2p", 10537),
-        NODE_NONE,
-        good_time};
+        /* addr */ ResolveService("pjs7or2ctvteeo5tu4bwyrtydeuhqhvdprtujn4daxr75jpebjxa.b32.i2p", 10537),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
     // Remains unchanged, port is already as it should be.
     const CAddress i2p_tried3{
-        ResolveService("hnbbyjpxx54623l555sta7pocy3se4sdgmuebi5k6reesz5rjp6q.b32.i2p",
-                       i2p::sam::PORT_SAM31),
-        NODE_NONE,
-        good_time};
+        /* addr */ ResolveService("hnbbyjpxx54623l555sta7pocy3se4sdgmuebi5k6reesz5rjp6q.b32.i2p",
+                                  i2p::sam::PORT_SAM31),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
-    // Gets removed because after changing the port it will collide with i2p_tried3.
+    // Is removed because after changing the port it will collide with i2p_tried3.
     const CAddress i2p_tried4{
-        ResolveService("hna37nqr3ahkqv62cuqfwgtneekvvpnuc4i4f6yo7tpoqjswvcwa.b32.i2p", port),
-        NODE_NONE,
-        good_time};
+        /* addr */ ResolveService("hna37nqr3ahkqv62cuqfwgtneekvvpnuc4i4f6yo7tpoqjswvcwa.b32.i2p", port),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
     // Remains unchanged.
-    const CAddress ipv4_tried{ResolveService("2.3.4.5", port), NODE_NONE, good_time};
+    const CAddress ipv4_tried{
+        /* addr */ ResolveService("2.3.4.5", port),
+        /* nServicesIn */ NODE_NONE,
+        /* nTimeIn */ good_time};
 
     const CNetAddr source;
 
@@ -1016,7 +1022,7 @@ BOOST_AUTO_TEST_CASE(reset_i2p_ports)
     stream << addrman1;
     stream >> addrman2;
 
-    auto addresses = addrman2.GetAddr(0, 0, NET_I2P);
+    auto addresses = addrman2.GetAddr(/* max_addresses */ 0, /* max_pct */ 0, /* network */ NET_I2P);
     BOOST_REQUIRE_EQUAL(addresses.size(), 6UL);
     std::sort(addresses.begin(), addresses.end()); // Just some deterministic order.
     BOOST_CHECK_EQUAL(addresses[0].ToStringIP(), i2p_new3.ToStringIP());
@@ -1032,7 +1038,7 @@ BOOST_AUTO_TEST_CASE(reset_i2p_ports)
     BOOST_CHECK_EQUAL(addresses[5].ToStringIP(), i2p_new1.ToStringIP());
     BOOST_CHECK_EQUAL(addresses[5].GetPort(), i2p::sam::PORT_SAM31);
 
-    addresses = addrman2.GetAddr(0, 0, NET_IPV4);
+    addresses = addrman2.GetAddr(/* max_addresses */ 0, /* max_pct */ 0, /* network */ NET_IPV4);
     BOOST_REQUIRE_EQUAL(addresses.size(), 2UL);
     std::sort(addresses.begin(), addresses.end()); // Just some deterministic order.
     BOOST_CHECK_EQUAL(addresses[0].ToStringIPPort(), ipv4_new.ToStringIPPort());

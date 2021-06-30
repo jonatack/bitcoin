@@ -681,8 +681,8 @@ void CAddrMan::ResetI2PPorts()
             }
 
             auto addr_info_newport = addr_info;
-            // The below changes addr_info_newport.GetKey() which is used in finding
-            // a bucket and a position within that bucket. So a re-bucketing may be necessary.
+            // The below changes addr_info_newport.GetKey(), which is used in finding a
+            // bucket and a position within that bucket. So a re-bucketing may be necessary.
             addr_info_newport.port = i2p::sam::PORT_SAM31;
 
             // Reposition entries of vvNew within the same bucket because we don't know the source
@@ -690,9 +690,10 @@ void CAddrMan::ResetI2PPorts()
             // re-evaluate that decision, but even if we could, CAddrInfo::GetNewBucket() does not
             // use CAddrInfo::GetKey() so it would end up in the same bucket as before the port
             // change.
-            const auto i_target = addr_info_newport.GetBucketPosition(nKey, true, bucket);
+            const auto i_target = addr_info_newport.GetBucketPosition(nKey, /* fNew */ true, bucket);
 
-            if (i_target == i) { // No need to re-position.
+            if (i_target == i) {
+                // No need to re-position.
                 addr_info = addr_info_newport;
                 continue;
             }
@@ -704,7 +705,7 @@ void CAddrMan::ResetI2PPorts()
                 vvNew[bucket][i] = -1;
                 addr_info = addr_info_newport;
             } else {
-                ClearNew(bucket, i);
+                ClearNew(bucket, /* nUBucketPos */ i);
             }
         }
     }
@@ -721,14 +722,15 @@ void CAddrMan::ResetI2PPorts()
             }
 
             auto addr_info_newport = addr_info;
-            // The below changes addr_info_newport.GetKey() which is used in finding
-            // a bucket and a position within that bucket. So a re-bucketing may be necessary.
+            // The below changes addr_info_newport.GetKey(), which is used in finding a
+            // bucket and a position within that bucket. So a re-bucketing may be necessary.
             addr_info_newport.port = i2p::sam::PORT_SAM31;
 
             const auto bucket_target = addr_info_newport.GetTriedBucket(nKey, m_asmap);
-            const auto i_target = addr_info_newport.GetBucketPosition(nKey, false, bucket_target);
+            const auto i_target = addr_info_newport.GetBucketPosition(nKey, /* fNew */ false, bucket_target);
 
-            if (bucket_target == bucket && i_target == i) { // No need to re-position.
+            if (bucket_target == bucket && i_target == i) {
+                // No need to re-position.
                 addr_info = addr_info_newport;
                 continue;
             }

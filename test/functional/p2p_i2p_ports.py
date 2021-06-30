@@ -31,7 +31,7 @@ class I2PPorts(BitcoinTestFramework):
             if not re.search(r"Expected messages .* does not partially match log", str(e)):
                 raise AssertionError(f"Assertion raised as expected, but with an unexpected message: {str(e)}")
         if not raised:
-            raise AssertionError(f"Assertion should have been raised")
+            raise AssertionError("Assertion should have been raised")
 
         self.log.info("Ensure we try to connect if port=0 and get an error due to missing I2P proxy")
         addr = "h3r6bkn46qxftwja53pxiykntegfyfjqtnzbm6iv6r5mungmqgmq.b32.i2p:0"
