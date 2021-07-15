@@ -45,6 +45,7 @@ class SignRawTransactionsTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
+        self.rpc_timeout = 120  # prevent timeouts in `test_signing_with_cltv` from generate(1500)
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
