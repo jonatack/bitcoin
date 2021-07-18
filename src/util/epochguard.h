@@ -40,6 +40,7 @@ public:
     Epoch() = default;
     Epoch(const Epoch&) = delete;
     Epoch& operator=(const Epoch&) = delete;
+    virtual ~Epoch() = default;
 
     bool guarded() const { return m_guarded; }
 
@@ -51,6 +52,11 @@ public:
         // only allow modification via Epoch member functions
         friend class Epoch;
         Marker& operator=(const Marker&) = delete;
+
+    public:
+        Marker() = default;
+        Marker(const Marker&) = default;
+        ~Marker() = default;
     };
 
     class SCOPED_LOCKABLE Guard
