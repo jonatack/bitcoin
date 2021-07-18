@@ -67,7 +67,7 @@ public:
         READWRITE(obj.source, obj.nLastSuccess, obj.nAttempts);
     }
 
-    CAddrInfo(const CAddress &addrIn, const CNetAddr &addrSource) : CAddress(addrIn), source(addrSource)
+    CAddrInfo(const CAddress& addrIn, const CNetAddr& addrSource) : CAddress(addrIn), source(addrSource)
     {
     }
 
@@ -76,19 +76,19 @@ public:
     }
 
     //! Calculate in which "tried" bucket this entry belongs
-    int GetTriedBucket(const uint256 &nKey, const std::vector<bool> &asmap) const;
+    size_t GetTriedBucket(const uint256& nKey, const std::vector<bool>& asmap) const;
 
     //! Calculate in which "new" bucket this entry belongs, given a certain source
-    int GetNewBucket(const uint256 &nKey, const CNetAddr& src, const std::vector<bool> &asmap) const;
+    size_t GetNewBucket(const uint256& nKey, const CNetAddr& src, const std::vector<bool>& asmap) const;
 
     //! Calculate in which "new" bucket this entry belongs, using its default source
-    int GetNewBucket(const uint256 &nKey, const std::vector<bool> &asmap) const
+    size_t GetNewBucket(const uint256& nKey, const std::vector<bool>& asmap) const
     {
         return GetNewBucket(nKey, source, asmap);
     }
 
     //! Calculate in which position of a bucket to store this entry.
-    int GetBucketPosition(const uint256 &nKey, bool fNew, int nBucket) const;
+    size_t GetBucketPosition(const uint256 &nKey, bool fNew, size_t nBucket) const;
 
     //! Determine whether the statistics about this entry are bad enough so that it can just be deleted
     bool IsTerrible(int64_t nNow = GetAdjustedTime()) const;
@@ -165,7 +165,7 @@ public:
 #define ADDRMAN_SET_TRIED_COLLISION_SIZE 10
 
 //! the maximum time we'll spend trying to resolve a tried table collision, in seconds
-static const int64_t ADDRMAN_TEST_WINDOW = 40*60; // 40 minutes
+static const int64_t ADDRMAN_TEST_WINDOW = 40 * 60; // 40 minutes
 
 /**
  * Stochastical (IP) address manager
@@ -260,7 +260,7 @@ public:
             if (info.nRefCount) {
                 assert(nIds != nNew); // this means nNew was wrong, oh ow
                 s << info;
-                nIds++;
+                ++nIds;
             }
         }
         nIds = 0;
@@ -269,17 +269,17 @@ public:
             if (info.fInTried) {
                 assert(nIds != nTried); // this means nTried was wrong, oh ow
                 s << info;
-                nIds++;
+                ++nIds;
             }
         }
-        for (int bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++) {
+        for (size_t bucket = 0; bucket != ADDRMAN_NEW_BUCKET_COUNT; ++bucket) {
             int nSize = 0;
-            for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++) {
+            for (size_t i = 0; i != ADDRMAN_BUCKET_SIZE; ++i) {
                 if (vvNew[bucket][i] != -1)
-                    nSize++;
+                    ++nSize;
             }
             s << nSize;
-            for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++) {
+            for (size_t i = 0; i != ADDRMAN_BUCKET_SIZE; ++i) {
                 if (vvNew[bucket][i] != -1) {
                     int nIndex = mapUnkIds[vvNew[bucket][i]];
                     s << nIndex;
@@ -343,8 +343,8 @@ public:
         }
 
         // Deserialize entries from the new table.
-        for (int n = 0; n < nNew; n++) {
-            CAddrInfo &info = mapInfo[n];
+        for (size_t n = 0; n != static_cast<size_t>(nNew); ++n) {
+            CAddrInfo& info = mapInfo[n];
             s >> info;
             mapAddr[info] = n;
             info.nRandomPos = vRandom.size();
@@ -354,11 +354,11 @@ public:
 
         // Deserialize entries from the tried table.
         int nLost = 0;
-        for (int n = 0; n < nTried; n++) {
+        for (int n = 0; n != nTried; ++n) {
             CAddrInfo info;
             s >> info;
-            int nKBucket = info.GetTriedBucket(nKey, m_asmap);
-            int nKBucketPos = info.GetBucketPosition(nKey, false, nKBucket);
+            size_t nKBucket{info.GetTriedBucket(nKey, m_asmap)};
+            size_t nKBucketPos{info.GetBucketPosition(nKey, /* fNew */ false, nKBucket)};
             if (vvTried[nKBucket][nKBucketPos] == -1) {
                 info.nRandomPos = vRandom.size();
                 info.fInTried = true;
@@ -366,9 +366,9 @@ public:
                 mapInfo[nIdCount] = info;
                 mapAddr[info] = nIdCount;
                 vvTried[nKBucket][nKBucketPos] = nIdCount;
-                nIdCount++;
+                ++nIdCount;
             } else {
-                nLost++;
+                ++nLost;
             }
         }
         nTried -= nLost;
@@ -378,10 +378,10 @@ public:
         // so we store all bucket-entry_index pairs to iterate through later.
         std::vector<std::pair<int, int>> bucket_entries;
 
-        for (int bucket = 0; bucket < nUBuckets; ++bucket) {
+        for (size_t bucket = 0; bucket != static_cast<size_t>(nUBuckets); ++bucket) {
             int num_entries{0};
             s >> num_entries;
-            for (int n = 0; n < num_entries; ++n) {
+            for (size_t n = 0; n != static_cast<size_t>(num_entries); ++n) {
                 int entry_index{0};
                 s >> entry_index;
                 if (entry_index >= 0 && entry_index < nNew) {
@@ -418,7 +418,7 @@ public:
             // this bucket_entry.
             if (info.nRefCount >= ADDRMAN_NEW_BUCKETS_PER_ADDRESS) continue;
 
-            int bucket_position = info.GetBucketPosition(nKey, true, bucket);
+            size_t bucket_position{info.GetBucketPosition(nKey, /* fNew */ true, bucket)};
             if (restore_bucketing && vvNew[bucket][bucket_position] == -1) {
                 // Bucketing has not changed, using existing bucket positions for the new table
                 vvNew[bucket][bucket_position] = entry_index;
@@ -427,7 +427,7 @@ public:
                 // In case the new table data cannot be used (bucket count wrong or new asmap),
                 // try to give them a reference based on their primary source address.
                 bucket = info.GetNewBucket(nKey, m_asmap);
-                bucket_position = info.GetBucketPosition(nKey, true, bucket);
+                bucket_position = info.GetBucketPosition(nKey, /* fNew */ true, bucket);
                 if (vvNew[bucket][bucket_position] == -1) {
                     vvNew[bucket][bucket_position] = entry_index;
                     ++info.nRefCount;
@@ -463,13 +463,13 @@ public:
         LOCK(cs);
         std::vector<int>().swap(vRandom);
         nKey = insecure_rand.rand256();
-        for (size_t bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++) {
-            for (size_t entry = 0; entry < ADDRMAN_BUCKET_SIZE; entry++) {
+        for (size_t bucket = 0; bucket != ADDRMAN_NEW_BUCKET_COUNT; ++bucket) {
+            for (size_t entry = 0; entry != ADDRMAN_BUCKET_SIZE; ++entry) {
                 vvNew[bucket][entry] = -1;
             }
         }
-        for (size_t bucket = 0; bucket < ADDRMAN_TRIED_BUCKET_COUNT; bucket++) {
-            for (size_t entry = 0; entry < ADDRMAN_BUCKET_SIZE; entry++) {
+        for (size_t bucket = 0; bucket != ADDRMAN_TRIED_BUCKET_COUNT; ++bucket) {
+            for (size_t entry = 0; entry != ADDRMAN_BUCKET_SIZE; ++entry) {
                 vvTried[bucket][entry] = -1;
             }
         }
@@ -702,7 +702,7 @@ private:
     void Delete(int nId) EXCLUSIVE_LOCKS_REQUIRED(cs);
 
     //! Clear a position in a "new" table. This is the only place where entries are actually deleted.
-    void ClearNew(int nUBucket, int nUBucketPos) EXCLUSIVE_LOCKS_REQUIRED(cs);
+    void ClearNew(size_t nUBucket, size_t nUBucketPos) EXCLUSIVE_LOCKS_REQUIRED(cs);
 
     //! Mark an entry "good", possibly moving it from "new" to "tried".
     void Good_(const CService &addr, bool test_before_evict, int64_t time) EXCLUSIVE_LOCKS_REQUIRED(cs);
