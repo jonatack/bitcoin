@@ -885,6 +885,32 @@ static void GetWalletBalances(UniValue& result)
 }
 
 /**
+ * GetProgressBar get a progress bar. The increment of the progress bar is 5%.
+ *
+ * @param progress  The fraction of the progress bar to be filled. Min: 0.0, max: 1.0.
+ * @returns a string representation of the progress bar.
+ */
+static std::string GetProgressBar(const double progress)
+{
+    if (progress < 0 || progress > 1) return "";
+
+    std::string progress_bar = "";
+    static constexpr double INCREMENT{0.05};
+    static const std::string COMPLETE_BAR{"\u2592"};
+    static const std::string INCOMPLETE_BAR{"\u2591"};
+
+    for (int i = 0; i < progress / INCREMENT; i++) {
+        progress_bar += COMPLETE_BAR;
+    }
+
+    for (int i = 0; i < (1 - progress) / INCREMENT; i++) {
+        progress_bar += INCOMPLETE_BAR;
+    }
+
+    return progress_bar;
+}
+
+/**
  * ParseGetInfoResult takes in -getinfo result in UniValue object and parses it
  * into a user friendly UniValue string to be printed on the console.
  * @param[out] result  Reference to UniValue result containing the -getinfo output.
@@ -926,7 +952,13 @@ static void ParseGetInfoResult(UniValue& result)
     std::string result_string = strprintf("%sChain: %s%s\n", BLUE, result["chain"].getValStr(), RESET);
     result_string += strprintf("Blocks: %s\n", result["blocks"].getValStr());
     result_string += strprintf("Headers: %s\n", result["headers"].getValStr());
-    result_string += strprintf("Verification progress: %.4f%%\n", result["verificationprogress"].get_real() * 100);
+
+    const double verification_progress{result["verificationprogress"].get_real()};
+    std::string verification_progress_bar = "";
+    // Only display progress bar if < 99%
+    if (verification_progress < 0.99) verification_progress_bar = GetProgressBar(verification_progress);
+
+    result_string += strprintf("Verification progress: %s%.4f%%\n", verification_progress_bar, verification_progress * 100);
     result_string += strprintf("Difficulty: %s\n\n", result["difficulty"].getValStr());
 
     result_string += strprintf(
