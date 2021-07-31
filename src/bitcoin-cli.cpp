@@ -885,29 +885,26 @@ static void GetWalletBalances(UniValue& result)
 }
 
 /**
- * GetProgressBar get a progress bar. The increment of the progress bar is 5%.
+ * GetProgressBar constructs a progress bar with 5% intervals.
  *
- * @param progress  The fraction of the progress bar to be filled. Min: 0.0, max: 1.0.
- * @returns a string representation of the progress bar.
+ * @param[in]  progress      The proportion of the progress bar to be filled between 0 and 1.
+ * @param[out] progress_bar  String representation of the progress bar.
  */
-static std::string GetProgressBar(const double progress)
+void GetProgressBar(double progress, std::string& progress_bar)
 {
-    if (progress < 0 || progress > 1) return "";
+    if (progress < 0 || progress > 1) return;
 
-    std::string progress_bar = "";
     static constexpr double INCREMENT{0.05};
     static const std::string COMPLETE_BAR{"\u2592"};
     static const std::string INCOMPLETE_BAR{"\u2591"};
 
-    for (int i = 0; i < progress / INCREMENT; i++) {
+    for (int i = 0; i < progress / INCREMENT; ++i) {
         progress_bar += COMPLETE_BAR;
     }
-
-    for (int i = 0; i < (1 - progress) / INCREMENT; i++) {
+    for (int i = 0; i < (1 - progress) / INCREMENT; ++i) {
         progress_bar += INCOMPLETE_BAR;
     }
-
-    return progress_bar;
+    progress_bar += " ";
 }
 
 /**
@@ -953,12 +950,12 @@ static void ParseGetInfoResult(UniValue& result)
     result_string += strprintf("Blocks: %s\n", result["blocks"].getValStr());
     result_string += strprintf("Headers: %s\n", result["headers"].getValStr());
 
-    const double verification_progress{result["verificationprogress"].get_real()};
-    std::string verification_progress_bar = "";
-    // Only display progress bar if < 99%
-    if (verification_progress < 0.99) verification_progress_bar = GetProgressBar(verification_progress);
+    const double ibd_progress{result["verificationprogress"].get_real()};
+    std::string ibd_progress_bar;
+    // Display the progress bar only if IBD progress is less than 99%
+    if (ibd_progress < 0.99) GetProgressBar(ibd_progress, ibd_progress_bar);
 
-    result_string += strprintf("Verification progress: %s%.4f%%\n", verification_progress_bar, verification_progress * 100);
+    result_string += strprintf("Verification progress: %s%.4f%%\n", ibd_progress_bar, ibd_progress * 100);
     result_string += strprintf("Difficulty: %s\n\n", result["difficulty"].getValStr());
 
     result_string += strprintf(
