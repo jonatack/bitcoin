@@ -9,6 +9,8 @@
 #include <net.h>
 #include <validationinterface.h>
 
+#include <optional>
+
 class CAddrMan;
 class CChainParams;
 class CTxMemPool;
@@ -43,7 +45,7 @@ public:
     virtual ~PeerManager() { }
 
     /** Get statistics from node state */
-    virtual bool GetNodeStateStats(NodeId nodeid, CNodeStateStats& stats) const = 0;
+    virtual std::optional<CNodeStateStats> GetNodeStateStats(NodeId nodeid) const = 0;
 
     /** Whether this node ignores txs received over p2p. */
     virtual bool IgnoresIncomingTxs() = 0;

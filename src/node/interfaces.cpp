@@ -126,7 +126,7 @@ public:
                 if (lockMain) {
                     for (auto& node_stats : stats) {
                         std::get<1>(node_stats) =
-                            m_context->peerman->GetNodeStateStats(std::get<0>(node_stats).nodeid, std::get<2>(node_stats));
+                            m_context->peerman->GetNodeStateStats(std::get<0>(node_stats).nodeid).has_value();
                     }
                 }
             }

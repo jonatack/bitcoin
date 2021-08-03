@@ -310,7 +310,7 @@ public:
 
     /** Implement PeerManager */
     void CheckForStaleTipAndEvictPeers() override;
-    bool GetNodeStateStats(NodeId nodeid, CNodeStateStats& stats) const override;
+    std::optional<CNodeStateStats> GetNodeStateStats(NodeId nodeid) const override;
     bool IgnoresIncomingTxs() override { return m_ignore_incoming_txs; }
     void SendPings() override;
     void RelayTransaction(const uint256& txid, const uint256& wtxid) override;
@@ -1260,13 +1260,16 @@ PeerRef PeerManagerImpl::RemovePeer(NodeId id)
     return ret;
 }
 
-bool PeerManagerImpl::GetNodeStateStats(NodeId nodeid, CNodeStateStats& stats) const
+std::optional<CNodeStateStats> PeerManagerImpl::GetNodeStateStats(NodeId nodeid) const
 {
+    CNodeStateStats stats;
     {
         LOCK(cs_main);
-        CNodeState* state = State(nodeid);
-        if (state == nullptr)
-            return false;
+        const CNodeState* state{State(nodeid)};
+        if (state == nullptr) {
+            return std::nullopt;
+        }
+
         stats.nSyncHeight = state->pindexBestKnownBlock ? state->pindexBestKnownBlock->nHeight : -1;
         stats.nCommonHeight = state->pindexLastCommonBlock ? state->pindexLastCommonBlock->nHeight : -1;
         for (const QueuedBlock& queue : state->vBlocksInFlight) {
@@ -1275,9 +1278,13 @@ bool PeerManagerImpl::GetNodeStateStats(NodeId nodeid, CNodeStateStats& stats) c
         }
     }
 
-    PeerRef peer = GetPeerRef(nodeid);
-    if (peer == nullptr) return false;
+    const PeerRef peer{GetPeerRef(nodeid)};
+    if (peer == nullptr) {
+        return {stats};
+    }
+
     stats.m_starting_height = peer->m_starting_height;
+
     // It is common for nodes with good ping times to suddenly become lagged,
     // due to a new block arriving or other large transfer.
     // Merely reporting pingtime might fool the caller into thinking the node was still responsive,
@@ -1294,7 +1301,7 @@ bool PeerManagerImpl::GetNodeStateStats(NodeId nodeid, CNodeStateStats& stats) c
     stats.m_addr_rate_limited = peer->m_addr_rate_limited.load();
     stats.m_addr_relay_enabled = peer->m_addr_relay_enabled.load();
 
-    return true;
+    return {stats};
 }
 
 void PeerManagerImpl::AddToCompactExtraTransactions(const CTransactionRef& tx)

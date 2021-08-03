@@ -192,8 +192,6 @@ static RPCHelpMan getpeerinfo()
 
     for (const CNodeStats& stats : vstats) {
         UniValue obj(UniValue::VOBJ);
-        CNodeStateStats statestats;
-        bool fStateStats = peerman.GetNodeStateStats(stats.nodeid, statestats);
         obj.pushKV("id", stats.nodeid);
         obj.pushKV("addr", stats.addrName);
         if (stats.addrBind.IsValid()) {
@@ -223,8 +221,9 @@ static RPCHelpMan getpeerinfo()
         if (stats.m_min_ping_time < std::chrono::microseconds::max()) {
             obj.pushKV("minping", CountSecondsDouble(stats.m_min_ping_time));
         }
-        if (fStateStats && statestats.m_ping_wait > 0s) {
-            obj.pushKV("pingwait", CountSecondsDouble(statestats.m_ping_wait));
+        const std::optional<CNodeStateStats> statestats{peerman.GetNodeStateStats(stats.nodeid)};
+        if (statestats && statestats->m_ping_wait > 0s) {
+            obj.pushKV("pingwait", CountSecondsDouble(statestats->m_ping_wait));
         }
         obj.pushKV("version", stats.nVersion);
         // Use the sanitized form of subver here, to avoid tricksy remote peers from
@@ -234,18 +233,18 @@ static RPCHelpMan getpeerinfo()
         obj.pushKV("inbound", stats.fInbound);
         obj.pushKV("bip152_hb_to", stats.m_bip152_highbandwidth_to);
         obj.pushKV("bip152_hb_from", stats.m_bip152_highbandwidth_from);
-        if (fStateStats) {
-            obj.pushKV("startingheight", statestats.m_starting_height);
-            obj.pushKV("synced_headers", statestats.nSyncHeight);
-            obj.pushKV("synced_blocks", statestats.nCommonHeight);
+        if (statestats) {
+            obj.pushKV("startingheight", statestats->m_starting_height);
+            obj.pushKV("synced_headers", statestats->nSyncHeight);
+            obj.pushKV("synced_blocks", statestats->nCommonHeight);
             UniValue heights(UniValue::VARR);
-            for (const int height : statestats.vHeightInFlight) {
+            for (const int height : statestats->vHeightInFlight) {
                 heights.push_back(height);
             }
             obj.pushKV("inflight", heights);
-            obj.pushKV("addr_relay_enabled", statestats.m_addr_relay_enabled);
-            obj.pushKV("addr_processed", statestats.m_addr_processed);
-            obj.pushKV("addr_rate_limited", statestats.m_addr_rate_limited);
+            obj.pushKV("addr_relay_enabled", statestats->m_addr_relay_enabled);
+            obj.pushKV("addr_processed", statestats->m_addr_processed);
+            obj.pushKV("addr_rate_limited", statestats->m_addr_rate_limited);
         }
         UniValue permissions(UniValue::VARR);
         for (const auto& permission : NetPermissions::ToStrings(stats.m_permissionFlags)) {
