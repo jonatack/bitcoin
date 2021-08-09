@@ -407,6 +407,7 @@ private:
         int id;
         int mapped_as;
         int version;
+        bool is_addr_relay_enabled;
         bool is_bip152_hb_from;
         bool is_bip152_hb_to;
         bool is_block_relay;
@@ -499,9 +500,10 @@ public:
                 const std::string addr{peer["addr"].get_str()};
                 const std::string age{conn_time == 0 ? "" : ToString((m_time_now - conn_time) / 60)};
                 const std::string sub_version{peer["subver"].get_str()};
+                const bool is_addr_relay_enabled{peer["addr_relay_enabled"].get_bool()};
                 const bool is_bip152_hb_from{peer["bip152_hb_from"].get_bool()};
                 const bool is_bip152_hb_to{peer["bip152_hb_to"].get_bool()};
-                m_peers.push_back({addr, sub_version, conn_type, network, age, min_ping, ping, addr_processed, addr_rate_limited, last_blck, last_recv, last_send, last_trxn, peer_id, mapped_as, version, is_bip152_hb_from, is_bip152_hb_to, is_block_relay, is_outbound});
+                m_peers.push_back({addr, sub_version, conn_type, network, age, min_ping, ping, addr_processed, addr_rate_limited, last_blck, last_recv, last_send, last_trxn, peer_id, mapped_as, version, is_addr_relay_enabled, is_bip152_hb_from, is_bip152_hb_to, is_block_relay, is_outbound});
                 m_max_addr_length = std::max(addr.length() + 1, m_max_addr_length);
                 m_max_addr_processed_length = std::max(ToString(addr_processed).length(), m_max_addr_processed_length);
                 m_max_addr_rate_limited_length = std::max(ToString(addr_rate_limited).length(), m_max_addr_rate_limited_length);
@@ -539,7 +541,7 @@ public:
                     m_max_addr_rate_limited_length, // variable spacing
                     peer.addr_rate_limited ? ToString(peer.addr_rate_limited) : "",
                     m_max_addr_processed_length, // variable spacing
-                    peer.addr_processed ? ToString(peer.addr_processed) : "",
+                    peer.addr_processed ? ToString(peer.addr_processed) : peer.is_addr_relay_enabled ? "" : "-",
                     m_is_asmap_on ? 7 : 0, // variable spacing
                     m_is_asmap_on && peer.mapped_as ? ToString(peer.mapped_as) : "",
                     m_max_id_length, // variable spacing
@@ -631,6 +633,7 @@ public:
         "  age      Duration of connection to the peer, in minutes\n"
         "  addrl    Total number of addresses dropped due to rate limiting\n"
         "  addrp    Total number of addresses processed, excluding those dropped due to rate limiting\n"
+        "           \"-\" - we do not relay addresses to this peer (addr_relay_enabled is false)\n"
         "  asmap    Mapped AS (Autonomous System) number in the BGP route to the peer, used for diversifying\n"
         "           peer selection (only displayed if the -asmap config option is set)\n"
         "  id       Peer index, in increasing order of peer connections since node startup\n"
