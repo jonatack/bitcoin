@@ -524,6 +524,16 @@ public:
             result += strprintf("%*s %-*s%s\n", m_max_id_length, "id", IsAddressSelected() ? m_max_addr_length : 0, IsAddressSelected() ? "address" : "", IsVersionSelected() ? "version" : "");
             for (const Peer& peer : m_peers) {
                 std::string version{ToString(peer.version) + peer.sub_version};
+                if (peer.last_trxn > 0) {
+                    assert(peer.is_block_relay == false);
+                } else {
+                    assert(peer.last_trxn == 0);
+                }
+                if (peer.addr_processed > 0) {
+                    assert(peer.is_addr_relay_enabled == true);
+                } else {
+                    assert(peer.addr_processed == 0);
+                }
                 result += strprintf(
                     "%3s %6s %5s%7s%7s%5s%5s%5s%5s  %2s %*s%*s%*s%*i %*s %-*s%s\n",
                     peer.is_outbound ? "out" : "in",
