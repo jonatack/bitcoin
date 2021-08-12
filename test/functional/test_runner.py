@@ -304,6 +304,7 @@ BASE_SCRIPTS = [
     'feature_settings.py',
     'rpc_getdescriptorinfo.py',
     'rpc_addresses_deprecation.py',
+    'rpc_mempool_entry_fee_fields_deprecation.py',
     'rpc_help.py',
     'feature_help.py',
     'feature_shutdown.py',
