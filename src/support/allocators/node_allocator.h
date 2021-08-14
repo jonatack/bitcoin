@@ -135,7 +135,7 @@ public:
 
         // freelist is empty: get one chunk from allocated block memory.
         // It makes sense to not create the fully linked list of an allocated block up front, for several reasons
-        // On the one hand, zhe latency is higher when we need to iterate and update pointers for the whole block at once.
+        // On the one hand, the latency is higher when we need to iterate and update pointers for the whole block at once.
         // More importantly, most systems lazily allocate data. So when we allocate a big block of memory the memory for a page
         // is only actually made available to the program when it is first touched. So when we allocate a big block and only use
         // very little memory from it, the total memory usage is lower than what has been malloced'.
