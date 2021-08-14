@@ -19,6 +19,10 @@ BOOST_FIXTURE_TEST_SUITE(node_allocator_tests, BasicTestingSetup)
     BOOST_CHECK_EQUAL(num_free_chunks, mr.NumFreeChunks());                \
     BOOST_CHECK_EQUAL(num_blocks, mr.NumBlocks());
 
+#define CHECK_IN_RANGE(what, lowerInclusive, upperInclusive) \
+    BOOST_TEST(what >= lowerInclusive);                      \
+    BOOST_TEST(what <= upperInclusive);
+
 BOOST_AUTO_TEST_CASE(too_small)
 {
     node_allocator::MemoryResource mr;
@@ -107,21 +111,21 @@ BOOST_AUTO_TEST_CASE(different_memoryresource_assignment)
 
             // map_a now uses mr_b, since propagate_on_container_copy_assignment is std::true_type
             BOOST_CHECK(map_a.get_allocator() == map_b.get_allocator());
-            BOOST_CHECK_EQUAL(mr_b.NumFreeChunks(), 1);
+            CHECK_IN_RANGE(mr_b.NumFreeChunks(), 1U, 2U);
             BOOST_CHECK_EQUAL(mr_b.NumBlocks(), 1);
 
             // map_b was now recreated with data from map_a, using mr_a as the memory resource.
         }
 
         // map_b destroyed, should not have any effect on mr_b
-        BOOST_CHECK_EQUAL(mr_b.NumFreeChunks(), 1);
+        CHECK_IN_RANGE(mr_b.NumFreeChunks(), 1U, 2U);
         BOOST_CHECK_EQUAL(mr_b.NumBlocks(), 1);
         // but we'll get more free chunks in mr_a
-        BOOST_CHECK_EQUAL(mr_a.NumFreeChunks(), 100);
+        CHECK_IN_RANGE(mr_a.NumFreeChunks(), 100U, 101U);
     }
 
     // finally map_a is destroyed, getting more free chunks.
-    BOOST_CHECK_EQUAL(mr_a.NumFreeChunks(), 200);
+    CHECK_IN_RANGE(mr_a.NumFreeChunks(), 200U, 202U);
 }
 
 
@@ -146,21 +150,21 @@ BOOST_AUTO_TEST_CASE(different_memoryresource_move)
 
             // map_a now uses mr_b, since propagate_on_container_copy_assignment is std::true_type
             BOOST_CHECK(map_a.get_allocator() == map_b.get_allocator());
-            BOOST_CHECK_EQUAL(mr_b.NumFreeChunks(), 1);
+            CHECK_IN_RANGE(mr_b.NumFreeChunks(), 1U, 2U);
             BOOST_CHECK_EQUAL(mr_b.NumBlocks(), 1);
 
             // map_b was now recreated with data from map_a, using mr_a as the memory resource.
         }
 
         // map_b destroyed, should not have any effect on mr_b.
-        BOOST_CHECK_EQUAL(mr_b.NumFreeChunks(), 1);
+        CHECK_IN_RANGE(mr_b.NumFreeChunks(), 1U, 2U);
         BOOST_CHECK_EQUAL(mr_b.NumBlocks(), 1);
         // but we'll get more free chunks in mr_a
-        BOOST_CHECK_EQUAL(mr_a.NumFreeChunks(), 100);
+        CHECK_IN_RANGE(mr_a.NumFreeChunks(), 100U, 101U);
     }
 
     // finally map_a is destroyed, but since it was moved, no more free chunks.
-    BOOST_CHECK_EQUAL(mr_a.NumFreeChunks(), 100);
+    CHECK_IN_RANGE(mr_a.NumFreeChunks(), 100U, 102U);
 }
 
 
@@ -193,15 +197,15 @@ BOOST_AUTO_TEST_CASE(different_memoryresource_swap)
         }
 
         // map_b destroyed, so mr_a must have plenty of free chunks now
-        BOOST_CHECK_EQUAL(mr_a.NumFreeChunks(), 100);
+        CHECK_IN_RANGE(mr_a.NumFreeChunks(), 100U, 101U);
 
         // nothing happened to map_a, so mr_b still has no free chunks
         BOOST_CHECK_EQUAL(mr_b.NumFreeChunks(), 0);
     }
 
     // finally map_a is destroyed, so we got an entry back for mr_b.
-    BOOST_CHECK_EQUAL(mr_a.NumFreeChunks(), 100);
-    BOOST_CHECK_EQUAL(mr_b.NumFreeChunks(), 1);
+    CHECK_IN_RANGE(mr_a.NumFreeChunks(), 100U, 101U);
+    CHECK_IN_RANGE(mr_b.NumFreeChunks(), 1U, 2U);
 }
 
 // some structs that with defined alignment and customizeable size
