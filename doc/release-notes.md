@@ -63,6 +63,12 @@ P2P and network changes
 
 Updated RPCs
 ------------
+- The top-level fee fields `fee`, `modifiedfee`, `ancestorfees` and `descendantfees`
+  returned by RPCs `getmempoolentry`,`getrawmempool(verbose=true)`,
+  `getmempoolancestors(verbose=true)` and `getmempooldescendants(verbose=true)`
+  are now deprecated and will be removed in the next major version (use
+  `-deprecated=fees` if needed in this version). The same values, denominated
+  in BTC, can be accessed through the `fees` object in the result. (#22689)
 
 New RPCs
 --------
