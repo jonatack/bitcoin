@@ -242,11 +242,6 @@ struct alignas(32) A32 {
     char data[S];
 };
 
-constexpr bool isMultiple(size_t a, size_t b)
-{
-    return (a / b) * b == a;
-}
-
 } // namespace
 
 BOOST_AUTO_TEST_CASE(calc_required_chunk_size)

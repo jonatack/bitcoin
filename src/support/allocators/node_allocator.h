@@ -20,18 +20,18 @@
  * ## Behavior
  *
  * MemoryResource mallocs blocks of memory and uses these to carve out memory for the nodes. Nodes that are
- * destroyed by the Allocator are actually put back into a freelist for further use.This behavior has two main advantages:
+ * destroyed by the Allocator are actually put back into a free list for further use. This behavior has two main advantages:
  *
- * - Memory: no control structure is required for each node memory, the freelist is stored inplace. This typically safes
+ * - Memory: no control structure is required for each node memory; the free list is stored in-place. This typically saves
  *   about 8 bytes per node.
  * - Performance: much fewer calls to malloc/free. Accessing / putting back entries are O(1) with low constant overhead.
  *
  * There's no free lunch, so there are also disadvantages:
  *
- * - Memory that's been used for nodes is always put back into a freelist and never given back to the system. Memory
+ * - Memory that's been used for nodes is always put back into a free list and never given back to the system. Memory
  *   is only freed when the MemoryResource is destructed.
  *
- * - The freelist is a simple first-in-last-out linked list, it doesn't reorder elements. So freeing and malloc'ing again
+ * - The free list is a simple first-in-last-out linked list, it doesn't reorder elements. So freeing and malloc'ing again
  *   can have an advantageous access pattern which leads to less cache misses.
  *
  * ## Design & Implementation
@@ -42,7 +42,7 @@
  * MemoryResource is an immobile object that actually allocates, holds and manages chunks of memory. Since there is
  * unfortunately no way to determine the size of nodes that we want to optimize for in advance, MemoryResource uses
  * a simple heuristic: We assume the first call to Allocate with 1 element is for the node, and upon that first call the
- * MemoryResource is configured to use that as it's chunk size. Note that due to this heuristic we cannot implement an
+ * MemoryResource is configured to use that as its chunk size. Note that due to this heuristic we cannot implement a
  * `std::pmr::memory_resource` because it does not gie the information about the number of elements.
  *
  * ## Further Links
@@ -63,20 +63,20 @@ namespace node_allocator {
  *
  * - Chunks: Node-based containers allocate one node at a time. Whenever that happens, the MemoryResource's Allocate() gives out
  *   one chunk of memory. These chunks are carved out from a previously allocated memory block. Whenever a node is given back
- *   with Deallocate(), it is put into a freelist.
+ *   with Deallocate(), it is put into a free list.
  */
 class MemoryResource
 {
 public:
     /**
-     * Inplace linked list of the allocation chunks, used for the free list.
+     * In-place linked list of the allocation chunks, used for the free list.
      */
     struct ChunkNode {
         void* next;
     };
 
     /**
-     * Construct a new Memory Resource object and uses the specified block size for allocations.
+     * Construct a new Memory Resource object that uses the specified block size for allocations.
      * Actually the real block size can be a bit smaller, it will be the largest multiple of chunk size
      * that fits into the block.
      */
@@ -85,10 +85,12 @@ public:
     MemoryResource() = default;
 
     /**
-     * Copying a memory resource is not allowed, it is an immobile object.
+     * Copying/moving a memory resource is not allowed; it is an immobile object.
      */
     MemoryResource(const MemoryResource&) = delete;
     MemoryResource& operator=(const MemoryResource&) = delete;
+    MemoryResource(MemoryResource&&) = delete;
+    MemoryResource& operator=(MemoryResource&&) = delete;
 
     /**
      * Deallocates all allocated blocks.
@@ -133,12 +135,12 @@ public:
             return static_cast<T*>(old_head);
         }
 
-        // freelist is empty: get one chunk from allocated block memory.
+        // free list is empty: get one chunk from allocated block memory.
         // It makes sense to not create the fully linked list of an allocated block up front, for several reasons
         // On the one hand, the latency is higher when we need to iterate and update pointers for the whole block at once.
         // More importantly, most systems lazily allocate data. So when we allocate a big block of memory the memory for a page
         // is only actually made available to the program when it is first touched. So when we allocate a big block and only use
-        // very little memory from it, the total memory usage is lower than what has been malloced'.
+        // very little memory from it, the total memory usage is lower than what has been malloc'ed.
         if (m_untouched_memory_iterator == m_untouched_memory_end) {
             // slow path, only happens when a new block needs to be allocated
             AllocateNewBlock();
@@ -151,7 +153,7 @@ public:
     }
 
     /**
-     * Puts p back into the freelist f it was actually allocated form the memory block.
+     * Puts p back into the free list f it was actually allocated from the memory block.
      */
     template <typename T>
     void Deallocate(void* p, std::size_t n) noexcept
@@ -179,7 +181,7 @@ public:
     }
 
     /**
-     * Counts number of free entries in the freelist. This is an O(n) operation. Mostly for debugging / logging / testing.
+     * Counts number of free entries in the free list. This is an O(n) operation. Mostly for debugging / logging / testing.
      */
     [[nodiscard]] size_t NumFreeChunks() const noexcept
     {
@@ -250,11 +252,11 @@ private:
 
 
 /**
- * Allocator that's usable for node-based containers like std::unorderd_map or std::list.
+ * Allocator that's usable for node-based containers like std::unordered_map or std::list.
  *
  * The allocator is stateful, and can be cheaply copied. Its state is an immobile MemoryResource, which
  * actually does all the allocation/deallocations. So this class is just a simple wrapper that conforms to the
- * required STL interface. to be usable for the node based containers.
+ * required STL interface to be usable for the node based containers.
  */
 template <typename T>
 class Allocator
@@ -286,7 +288,7 @@ public:
     using propagate_on_container_swap = std::true_type; // to avoid the undefined behavior
 
     /**
-     * Move and swap have to propagate the allocator, so for consistency we do he same for copy assignment.
+     * Move and swap have to propagate the allocator, so for consistency we do the same for copy assignment.
      */
     using propagate_on_container_copy_assignment = std::true_type;
 
@@ -326,7 +328,7 @@ public:
     }
 
 private:
-    //! Stateful allocator, where the state is a simple pointer that an be cheaply copied.
+    //! Stateful allocator, where the state is a simple pointer that can be cheaply copied.
     MemoryResource* m_memory_resource;
 };
 
