@@ -490,7 +490,6 @@ static void entryToJSON(const CTxMemPool& pool, UniValue& info, const CTxMemPool
     fees.pushKV("modified", ValueFromAmount(e.GetModifiedFee()));
     fees.pushKV("ancestor", ValueFromAmount(e.GetModFeesWithAncestors()));
     fees.pushKV("descendant", ValueFromAmount(e.GetModFeesWithDescendants()));
-    info.pushKV("fees", fees);
     info.pushKV("vsize", (int)e.GetTxSize());
     info.pushKV("weight", (int)e.GetTxWeight());
     // TODO: top-level fee fields are deprecated. deprecated_fee_fields_enabled blocks should be removed in v24
@@ -512,6 +511,7 @@ static void entryToJSON(const CTxMemPool& pool, UniValue& info, const CTxMemPool
         info.pushKV("ancestorfees", e.GetModFeesWithAncestors());
     }
     info.pushKV("wtxid", pool.vTxHashes[e.vTxHashesIdx].first.ToString());
+    info.pushKV("fees", fees);
     const CTransaction& tx = e.GetTx();
     std::set<std::string> setDepends;
     for (const CTxIn& txin : tx.vin)
