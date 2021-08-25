@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(getcoinscachesizestate)
         chainstate.GetCoinsCacheSizeState(MAX_COINS_CACHE_BYTES, /*max_mempool_size_bytes*/ 0),
         CoinsCacheSizeState::CRITICAL);
 
-    // Passing non-zero max mempool usage should allow us more headroom.
+    // Passing non-zero max mempool usage (512 KiB) should allow us more headroom.
     BOOST_CHECK_EQUAL(
         chainstate.GetCoinsCacheSizeState(MAX_COINS_CACHE_BYTES, /*max_mempool_size_bytes*/ 1 << 19),
         CoinsCacheSizeState::OK);
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(getcoinscachesizestate)
         BOOST_CHECK(usage_percentage >= 0.9);
         BOOST_CHECK(usage_percentage < 1);
         BOOST_CHECK_EQUAL(
-            chainstate.GetCoinsCacheSizeState(MAX_COINS_CACHE_BYTES, 512),
+            chainstate.GetCoinsCacheSizeState(MAX_COINS_CACHE_BYTES, /*max_mempool_size_bytes*/ 1 << 10), // 1024
             CoinsCacheSizeState::LARGE);
     }
 

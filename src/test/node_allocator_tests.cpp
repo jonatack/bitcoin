@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 
 BOOST_FIXTURE_TEST_SUITE(node_allocator_tests, BasicTestingSetup)
@@ -26,8 +27,8 @@ BOOST_FIXTURE_TEST_SUITE(node_allocator_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(too_small)
 {
-    node_allocator::MemoryResource mr(sizeof(void*));
-    void* ptr = mr.Allocate<char>(1);
+    node_allocator::MemoryResource mr{sizeof(void*)};
+    void* ptr{mr.Allocate<char>(1)};
     BOOST_CHECK(ptr != nullptr);
 
     // mr is used
@@ -149,7 +150,7 @@ BOOST_AUTO_TEST_CASE(different_memoryresource_move)
 
             map_b = std::move(map_a);
 
-            // map_a now uses mr_b, since propagate_on_container_copy_assignment is std::true_type
+            // map_a now uses mr_b, since propagate_on_container_move_assignment is std::true_type
             BOOST_CHECK(map_a.get_allocator() == map_b.get_allocator());
             CHECK_IN_RANGE(mr_b.NumFreeChunks(), 1U, 2U);
             BOOST_CHECK_EQUAL(mr_b.NumBlocks(), 1);
@@ -191,7 +192,8 @@ BOOST_AUTO_TEST_CASE(different_memoryresource_swap)
 
             std::swap(map_a, map_b);
 
-            // maps have swapped, so their allocator have swapped too. No additional allocations have occored!
+            // The maps have swapped, so their allocators have swapped, too.
+            // No additional allocations have occurred!
             BOOST_CHECK(map_a.get_allocator() != map_b.get_allocator());
             BOOST_CHECK(alloc_a == map_b.get_allocator());
             BOOST_CHECK(alloc_b == map_a.get_allocator());
@@ -209,7 +211,7 @@ BOOST_AUTO_TEST_CASE(different_memoryresource_swap)
     CHECK_IN_RANGE(mr_b.NumFreeChunks(), 1U, 2U);
 }
 
-// some structs that with defined alignment and customizeable size
+// some structs with defined alignment and customizeable size
 
 namespace {
 
@@ -323,8 +325,8 @@ void TestChunksAreUsed()
 {
     using Factory = node_allocator::UnorderedMapFactory<Key, Value, Hash>;
     auto mr = Factory::CreateMemoryResource();
-    BOOST_TEST_MESSAGE(sizeof(void*) << " sizeof(void*), " << sizeof(Key) << "/" << sizeof(Value) << "/" << sizeof(std::pair<const Key, Value>) << " sizeof Key/Value/Pair, "
-                                     << mr.ChunkSizeBytes() << " mr.ChunkSizeBytes()");
+    BOOST_TEST_MESSAGE(strprintf("%u sizeof(void*), %u/%u/%u sizeof Key/Value/Pair, %u mr.ChunkSizeBytes()",
+                                 sizeof(void*), sizeof(Key), sizeof(Value), sizeof(std::pair<const Key, Value>), mr.ChunkSizeBytes()));
     {
         auto map = Factory::CreateContainer(&mr);
         for (size_t i = 0; i < 5; ++i) {

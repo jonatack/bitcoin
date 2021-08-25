@@ -22,7 +22,7 @@ void BenchFillClearMap(benchmark::Bench& bench, Map& map)
     tx.vout[0].scriptPubKey = CScript() << OP_2 << OP_EQUAL;
     tx.vout[0].nValue = 10 * COIN;
 
-    COutPoint p(tx.GetHash(), 0);
+    COutPoint p{tx.GetHash(), 0};
 
     bench.epochIterations(5000 * 10).run([&] {
         // modify hash a bit so we get a new entry in the map

@@ -16,7 +16,7 @@
 /**
  * @brief Efficient allocator for node-based containers.
  *
- * The combination of Allocator and MemoryResource can be used as an optimization for node based containers
+ * The combination of Allocator and MemoryResource can be used as an optimization for node-based containers
  * that experience heavy load.
  *
  * ## Behavior
@@ -42,24 +42,24 @@
  *
  * ## Design & Implementation
  *
- * Allocator is a cheaply copyable, `std::allocator` compatible type used for the containers. Similar to
+ * Allocator is a cheaply copyable, `std::allocator`-compatible type used for the containers. Similar to
  * `std::pmr::polymorphic_allocator`, it holds a pointer to a memory resource.
  *
  * MemoryResource is an immobile object that actually allocates, holds and manages chunks of memory. Currently it is only
  * able provide optimized alloc/free for a single fixed node size which is given in the constructor. Only allocations that match this
- * size will be provided from the preallocated blocks of memory, all other requests simply use ::operator new().
+ * size will be provided from the preallocated blocks of memory; all other requests simply use ::operator new().
  * To get the correct node size in all cases it is unfortunately necessary to have a look at the various implementations of
  * std::unordered_map. There is currently no standard way of getting the node size programmatically.
  *
- * Node size is determined by memusage::NodeSize, and verified to work in various alignment scenarious in
- * node_allocator_tests/test_chunks_are_used.
+ * Node size is determined by memusage::NodeSize and verified to work in various alignment scenarios in
+ * `node_allocator_tests/test_chunks_are_used`.
  *
  * ## Further Links
  *
  * @see CppCon 2017: Bob Steagall “How to Write a Custom Allocator” https://www.youtube.com/watch?v=kSWfushlvB8
  * @see C++Now 2018: Arthur O'Dwyer “An Allocator is a Handle to a Heap” https://www.youtube.com/watch?v=0MdSJsCTRkY
  * @see AllocatorAwareContainer: Introduction and pitfalls of propagate_on_container_XXX defaults
- *     https://www.foonathan.net/2015/10/allocatorawarecontainer-propagation-pitfalls/
+ *      https://www.foonathan.net/2015/10/allocatorawarecontainer-propagation-pitfalls/
  */
 namespace node_allocator {
 
@@ -143,7 +143,7 @@ public:
         }
 
         // free list is empty: get one chunk from allocated block memory.
-        // It makes sense to not create the fully linked list of an allocated block up front, for several reasons
+        // It makes sense to not create the fully linked list of an allocated block up-front, for several reasons.
         // On the one hand, the latency is higher when we need to iterate and update pointers for the whole block at once.
         // More importantly, most systems lazily allocate data. So when we allocate a big block of memory the memory for a page
         // is only actually made available to the program when it is first touched. So when we allocate a big block and only use
@@ -155,7 +155,7 @@ public:
 
         // peel off one chunk from the untouched memory. The next pointer of in-use elements doesn't matter until it is
         // deallocated, only then it is used to form the free list.
-        auto tmp = m_untouched_memory_iterator;
+        const auto tmp = m_untouched_memory_iterator;
         m_untouched_memory_iterator = static_cast<char*>(tmp) + m_chunk_size_bytes;
         return static_cast<T*>(tmp);
     }
@@ -172,7 +172,7 @@ public:
 
         if (m_chunk_size_bytes == required_chunk_size_bytes && n == 1) {
             // put it into the linked list
-            auto node = static_cast<ChunkNode*>(p);
+            const auto node = static_cast<ChunkNode*>(p);
             node->next = m_free_chunks;
             m_free_chunks = node;
         } else {
@@ -194,7 +194,7 @@ public:
      */
     [[nodiscard]] size_t DynamicMemoryUsage() const noexcept
     {
-        size_t alloc_size = (BlockSizeBytes / m_chunk_size_bytes) * m_chunk_size_bytes;
+        const size_t alloc_size{(BlockSizeBytes / m_chunk_size_bytes) * m_chunk_size_bytes};
         return memusage::MallocUsage(alloc_size) * m_allocated_blocks.size() + memusage::DynamicUsage(m_allocated_blocks);
     }
 
@@ -227,8 +227,8 @@ public:
     template <typename T>
     [[nodiscard]] static constexpr size_t CalcRequiredChunkSizeBytes() noexcept
     {
-        auto alignment_max = std::max(std::alignment_of_v<T>, std::alignment_of_v<ChunkNode>);
-        auto size_max = std::max(sizeof(T), sizeof(ChunkNode));
+        const auto alignment_max = std::max(std::alignment_of_v<T>, std::alignment_of_v<ChunkNode>);
+        const auto size_max = std::max(sizeof(T), sizeof(ChunkNode));
 
         // find closest multiple of alignment_max that holds size_max
         return ((size_max + alignment_max - 1U) / alignment_max) * alignment_max;
@@ -243,7 +243,7 @@ private:
     {
         static_assert(sizeof(char) == 1U);
 
-        auto const num_chunks = BlockSizeBytes / m_chunk_size_bytes;
+        const auto num_chunks = BlockSizeBytes / m_chunk_size_bytes;
         m_untouched_memory_iterator = ::operator new(num_chunks* m_chunk_size_bytes);
         m_untouched_memory_end = static_cast<char*>(m_untouched_memory_iterator) + num_chunks * m_chunk_size_bytes;
         m_allocated_blocks.push_back(m_untouched_memory_iterator);
@@ -260,7 +260,7 @@ private:
     //! A single linked list of all data available in the MemoryResource. This list is used for allocations of single elements.
     void* m_free_chunks = nullptr;
 
-    //! Points to the begin of available memory for carving out chunks.
+    //! Points to the beginning of available memory for carving out chunks.
     void* m_untouched_memory_iterator = nullptr;
 
     //! Points to the end of available memory for carving out chunks.
@@ -273,7 +273,7 @@ private:
  *
  * The allocator is stateful, and can be cheaply copied. Its state is an immobile MemoryResource, which
  * actually does all the allocation/deallocations. So this class is just a simple wrapper that conforms to the
- * required STL interface to be usable for the node based containers.
+ * required STL interface to be usable for the node-based containers.
  */
 template <typename T>
 class Allocator

@@ -78,7 +78,6 @@ BITCOIN_TESTS =\
   test/blockfilter_tests.cpp \
   test/blockfilter_index_tests.cpp \
   test/bloom_tests.cpp \
-  test/node_allocator_tests.cpp \
   test/bswap_tests.cpp \
   test/checkqueue_tests.cpp \
   test/coins_tests.cpp \
@@ -108,6 +107,7 @@ BITCOIN_TESTS =\
   test/net_peer_eviction_tests.cpp \
   test/net_tests.cpp \
   test/netbase_tests.cpp \
+  test/node_allocator_tests.cpp \
   test/pmt_tests.cpp \
   test/policy_fee_tests.cpp \
   test/policyestimator_tests.cpp \

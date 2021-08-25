@@ -167,8 +167,9 @@ struct NodeSize<std::unordered_map<Key, V, Hash, Equals, Allocator>> {
         using ValueType = std::pair<const Key, V>;
 
 #if defined(_MSC_VER)
-        // list node contains 2 pointers and no hash
-        // see https://github.com/microsoft/STL/blob/main/stl/inc/unordered_map and https://github.com/microsoft/STL/blob/main/stl/inc/list
+        // list node contains 2 pointers and no hash; see
+        // https://github.com/microsoft/STL/blob/main/stl/inc/unordered_map and
+        // https://github.com/microsoft/STL/blob/main/stl/inc/list
         return sizeof(std::pair<std::pair<void*, void*>, ValueType>);
 #else
 
@@ -177,8 +178,9 @@ struct NodeSize<std::unordered_map<Key, V, Hash, Equals, Allocator>> {
         // see https://github.com/llvm/llvm-project/blob/release/13.x/libcxx/include/__hash_table#L92
         return sizeof(std::pair<ValueType, std::pair<size_t, void*>>);
 #else
-        // libstdc++ doesn't store hash when it's operator() is noexcept
-        // see hashtable_policy.h, struct _Hash_node https://gcc.gnu.org/onlinedocs/libstdc++/latest-doxygen/a05689.html
+        // libstdc++ doesn't store hash when its operator() is noexcept;
+        // see hashtable_policy.h, struct _Hash_node
+        // https://gcc.gnu.org/onlinedocs/libstdc++/latest-doxygen/a05689.html
         if (noexcept(std::declval<Hash>()(std::declval<const Key&>()))) {
             return sizeof(std::pair<void*, ValueType>);
         } else {
