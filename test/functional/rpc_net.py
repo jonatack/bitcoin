@@ -12,11 +12,10 @@ from itertools import product
 import time
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.p2p import P2PInterface
 import test_framework.messages
-from test_framework.messages import (
-    NODE_NETWORK,
-    NODE_WITNESS,
+from test_framework.p2p import (
+    P2PInterface,
+    P2P_SERVICES,
 )
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -40,6 +39,17 @@ def assert_net_servicesnames(servicesflag, servicenames):
     for servicename in servicenames:
         servicesflag_generated |= getattr(test_framework.messages, 'NODE_' + servicename)
     assert servicesflag_generated == servicesflag
+
+
+def assert_getnodeaddress(*, result, addr=None, net="ipv4", tried=False, refcount=1):
+    assert_equal(result["services"], P2P_SERVICES)
+    if addr:
+        assert_equal(result["address"], addr)
+    assert_equal(result["port"], 8333)
+    assert_equal(result["network"], net)
+    assert_equal(result["tried"], tried)
+    if not tried:
+        assert_equal(result["reference_count"], refcount)
 
 
 class NetTest(BitcoinTestFramework):
@@ -189,7 +199,6 @@ class NetTest(BitcoinTestFramework):
     def test_getnodeaddresses(self):
         self.log.info("Test getnodeaddresses")
         self.nodes[0].add_p2p_connection(P2PInterface())
-        services = NODE_NETWORK | NODE_WITNESS
 
         # Add an IPv6 address to the address manager.
         ipv6_addr = "1233:3432:2434:2343:3234:2345:6546:4534"
@@ -217,18 +226,13 @@ class NetTest(BitcoinTestFramework):
         assert_greater_than(10000, len(node_addresses))
         for a in node_addresses:
             assert_greater_than(a["time"], 1527811200)  # 1st June 2018
-            assert_equal(a["services"], services)
             assert a["address"] in imported_addrs
-            assert_equal(a["port"], 8333)
-            assert_equal(a["network"], "ipv4")
+            assert_getnodeaddress(result=a)
 
         # Test the IPv6 address.
         res = self.nodes[0].getnodeaddresses(0, "ipv6")
         assert_equal(len(res), 1)
-        assert_equal(res[0]["address"], ipv6_addr)
-        assert_equal(res[0]["network"], "ipv6")
-        assert_equal(res[0]["port"], 8333)
-        assert_equal(res[0]["services"], services)
+        assert_getnodeaddress(result=res[0], addr=ipv6_addr, net="ipv6")
 
         # Test for the absence of onion and I2P addresses.
         for network in ["onion", "i2p"]:
@@ -262,11 +266,9 @@ class NetTest(BitcoinTestFramework):
 
         self.log.debug("Test that adding a valid address to the tried table succeeds")
         assert_equal(node.addpeeraddress(address="1.2.3.4", tried=True, port=8333), {"success": True})
-        with node.assert_debug_log(expected_msgs=["Addrman checks started: new 0, tried 1, total 1"]):
-            addrs = node.getnodeaddresses(count=0)  # getnodeaddresses re-runs the addrman checks
-            assert_equal(len(addrs), 1)
-            assert_equal(addrs[0]["address"], "1.2.3.4")
-            assert_equal(addrs[0]["port"], 8333)
+        addrs = node.getnodeaddresses(count=0)
+        assert_equal(len(addrs), 1)
+        assert_getnodeaddress(result=addrs[0], addr="1.2.3.4", tried=True)
 
         self.log.debug("Test that adding an already-present tried address to the new and tried tables fails")
         for value in [True, False]:
@@ -275,9 +277,10 @@ class NetTest(BitcoinTestFramework):
 
         self.log.debug("Test that adding a second address, this time to the new table, succeeds")
         assert_equal(node.addpeeraddress(address="2.0.0.0", port=8333), {"success": True})
-        with node.assert_debug_log(expected_msgs=["Addrman checks started: new 1, tried 1, total 2"]):
-            addrs = node.getnodeaddresses(count=0)  # getnodeaddresses re-runs the addrman checks
-            assert_equal(len(addrs), 2)
+        addrs = sorted(node.getnodeaddresses(count=0), key=lambda k: k["address"])
+        assert_equal(len(addrs), 2)
+        for n, addr, tried in [[0, "1.2.3.4", True], [1, "2.0.0.0", False]]:
+            assert_getnodeaddress(result=addrs[n], addr=addr, tried=tried)
 
 
 if __name__ == '__main__':
