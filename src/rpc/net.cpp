@@ -896,11 +896,11 @@ static RPCHelpMan getnodeaddresses()
         throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Network not recognized: %s", request.params[1].get_str()));
     }
 
-    // returns a shuffled list of CAddress
-    const std::vector<CAddress> vAddr{connman.GetAddresses(count, /* max_pct */ 0, network)};
+    // returns a shuffled list of CAddrInfo objects.
+    const std::vector<CAddrInfo> addrs{connman.GetAddresses(count, /* max_pct */ 0, network)};
     UniValue ret(UniValue::VARR);
 
-    for (const CAddress& addr : vAddr) {
+    for (const CAddrInfo& addr : addrs) {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("time", (int)addr.nTime);
         obj.pushKV("services", (uint64_t)addr.nServices);

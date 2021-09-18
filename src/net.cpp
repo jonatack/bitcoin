@@ -2704,18 +2704,18 @@ CConnman::~CConnman()
     Stop();
 }
 
-std::vector<CAddress> CConnman::GetAddresses(size_t max_addresses, size_t max_pct, std::optional<Network> network) const
+std::vector<CAddrInfo> CConnman::GetAddresses(size_t max_addresses, size_t max_pct, std::optional<Network> network) const
 {
-    std::vector<CAddress> addresses = addrman.GetAddr(max_addresses, max_pct, network);
+    std::vector<CAddrInfo> addresses = addrman.GetAddr(max_addresses, max_pct, network);
     if (m_banman) {
         addresses.erase(std::remove_if(addresses.begin(), addresses.end(),
-                        [this](const CAddress& addr){return m_banman->IsDiscouraged(addr) || m_banman->IsBanned(addr);}),
+                        [this](const CAddrInfo& addr){return m_banman->IsDiscouraged(addr) || m_banman->IsBanned(addr);}),
                         addresses.end());
     }
     return addresses;
 }
 
-std::vector<CAddress> CConnman::GetAddresses(CNode& requestor, size_t max_addresses, size_t max_pct)
+std::vector<CAddrInfo> CConnman::GetAddresses(CNode& requestor, size_t max_addresses, size_t max_pct)
 {
     auto local_socket_bytes = requestor.addrBind.GetAddrBytes();
     uint64_t cache_id = GetDeterministicRandomizer(RANDOMIZER_ID_ADDRCACHE)

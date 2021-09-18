@@ -34,6 +34,12 @@ public:
     //! last counted attempt (memory only)
     int64_t nLastCountAttempt{0};
 
+    //! reference count in new sets (memory only)
+    int nRefCount{0};
+
+    //! in tried set? (memory only)
+    bool fInTried{false};
+
 private:
     //! where knowledge about this address first came from
     CNetAddr source;
@@ -43,12 +49,6 @@ private:
 
     //! connection attempts since last successful attempt
     int nAttempts{0};
-
-    //! reference count in new sets (memory only)
-    int nRefCount{0};
-
-    //! in tried set? (memory only)
-    bool fInTried{false};
 
     //! position in vRandom
     mutable int nRandomPos{-1};
@@ -240,12 +240,12 @@ public:
      * @param[in] max_pct        Maximum percentage of addresses to return (0 = all).
      * @param[in] network        Select only addresses of this network (nullopt = all).
      */
-    std::vector<CAddress> GetAddr(size_t max_addresses, size_t max_pct, std::optional<Network> network) const
+    std::vector<CAddrInfo> GetAddr(size_t max_addresses, size_t max_pct, std::optional<Network> network) const
         EXCLUSIVE_LOCKS_REQUIRED(!cs)
     {
         LOCK(cs);
         Check();
-        std::vector<CAddress> vAddr;
+        std::vector<CAddrInfo> vAddr;
         GetAddr_(vAddr, max_addresses, max_pct, network);
         Check();
         return vAddr;
@@ -414,7 +414,7 @@ private:
      * @param[in] max_pct        Maximum percentage of addresses to return (0 = all).
      * @param[in] network        Select only addresses of this network (nullopt = all).
      */
-    void GetAddr_(std::vector<CAddress>& vAddr, size_t max_addresses, size_t max_pct, std::optional<Network> network) const EXCLUSIVE_LOCKS_REQUIRED(cs);
+    void GetAddr_(std::vector<CAddrInfo>& vAddr, size_t max_addresses, size_t max_pct, std::optional<Network> network) const EXCLUSIVE_LOCKS_REQUIRED(cs);
 
     /** We have successfully connected to this peer. Calling this function
      *  updates the CAddress's nTime, which is used in our IsTerrible()

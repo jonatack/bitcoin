@@ -3764,15 +3764,15 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
         peer->m_getaddr_recvd = true;
 
         peer->m_addrs_to_send.clear();
-        std::vector<CAddress> vAddr;
+        std::vector<CAddrInfo> vAddr;
         if (pfrom.HasPermission(NetPermissionFlags::Addr)) {
             vAddr = m_connman.GetAddresses(MAX_ADDR_TO_SEND, MAX_PCT_ADDR_TO_SEND, /* network */ std::nullopt);
         } else {
             vAddr = m_connman.GetAddresses(pfrom, MAX_ADDR_TO_SEND, MAX_PCT_ADDR_TO_SEND);
         }
         FastRandomContext insecure_rand;
-        for (const CAddress &addr : vAddr) {
-            PushAddress(*peer, addr, insecure_rand);
+        for (const CAddrInfo &addr : vAddr) {
+            PushAddress(*peer, CAddress{addr}, insecure_rand);
         }
         return;
     }

@@ -843,7 +843,7 @@ int CAddrMan::Check_() const
     return 0;
 }
 
-void CAddrMan::GetAddr_(std::vector<CAddress>& vAddr, size_t max_addresses, size_t max_pct, std::optional<Network> network) const
+void CAddrMan::GetAddr_(std::vector<CAddrInfo>& vAddr, size_t max_addresses, size_t max_pct, std::optional<Network> network) const
 {
     AssertLockHeld(cs);
 
