@@ -438,8 +438,15 @@ public:
 
     //! Always included in serialization.
     uint32_t nTime{TIME_INIT};
+
     //! Serialized as uint64_t in V1, and as CompactSize in V2.
     ServiceFlags nServices{NODE_NONE};
+
+    //! Reference count in the addrman new table (memory only, not persisted).
+    int nRefCount{0};
+
+    //! Whether this peer is in the addrman tried table (memory only, not persisted).
+    bool fInTried{false};
 
     friend bool operator==(const CAddress& a, const CAddress& b)
     {

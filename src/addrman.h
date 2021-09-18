@@ -44,12 +44,6 @@ private:
     //! connection attempts since last successful attempt
     int nAttempts{0};
 
-    //! reference count in new sets (memory only)
-    int nRefCount{0};
-
-    //! in tried set? (memory only)
-    bool fInTried{false};
-
     //! position in vRandom
     mutable int nRandomPos{-1};
 
