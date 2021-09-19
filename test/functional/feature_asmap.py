@@ -27,6 +27,7 @@ import os
 import shutil
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.util import assert_equal
 
 DEFAULT_ASMAP_FILENAME = 'ip_asn.map' # defined in src/init.cpp
 ASMAP = '../../src/test/data/asmap.raw' # path to unit test skeleton asmap
@@ -87,13 +88,11 @@ class AsmapTest(BitcoinTestFramework):
         self.start_node(0, ["-asmap", "-checkaddrman=1"])
         self.fill_addrman(node_id=0)
         self.restart_node(0, ["-asmap", "-checkaddrman=1"])
-        with self.node.assert_debug_log(
-            expected_msgs=[
-                "Addrman checks started: new 2, tried 2, total 4",
-                "Addrman checks completed successfully",
-            ]
-        ):
-            self.node.getnodeaddresses()  # getnodeaddresses re-runs the addrman checks
+        addrs = sorted(self.node.getnodeaddresses(count=0), key=lambda k: k["address"])
+        assert_equal(len(addrs), 4)
+        for n, tried in [[0, True], [1, True], [2, False], [3, False]]:
+            assert_equal(addrs[n]["address"], f"101.{n}.0.0")
+            assert_equal(addrs[n]["tried"], tried)
         os.remove(self.default_asmap)
 
     def test_default_asmap_with_missing_file(self):
