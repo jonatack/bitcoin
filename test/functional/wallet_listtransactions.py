@@ -31,20 +31,20 @@ class ListTransactionsTest(BitcoinTestFramework):
         self.sync_all()
         assert_array_result(self.nodes[0].listtransactions(),
                             {"txid": txid},
-                            {"category": "send", "amount": Decimal("-0.1"), "confirmations": 0})
+                            {"category": "send", "amount": Decimal("-0.1"), "confirmations": 0, "trusted": True})
         assert_array_result(self.nodes[1].listtransactions(),
                             {"txid": txid},
-                            {"category": "receive", "amount": Decimal("0.1"), "confirmations": 0})
+                            {"category": "receive", "amount": Decimal("0.1"), "confirmations": 0, "trusted": False})
         self.log.info("Test confirmations change after mining a block")
         blockhash = self.generate(self.nodes[0], 1)[0]
         blockheight = self.nodes[0].getblockheader(blockhash)['height']
         self.sync_all()
         assert_array_result(self.nodes[0].listtransactions(),
                             {"txid": txid},
-                            {"category": "send", "amount": Decimal("-0.1"), "confirmations": 1, "blockhash": blockhash, "blockheight": blockheight})
+                            {"category": "send", "amount": Decimal("-0.1"), "confirmations": 1, "blockhash": blockhash, "blockheight": blockheight, "trusted": True})
         assert_array_result(self.nodes[1].listtransactions(),
                             {"txid": txid},
-                            {"category": "receive", "amount": Decimal("0.1"), "confirmations": 1, "blockhash": blockhash, "blockheight": blockheight})
+                            {"category": "receive", "amount": Decimal("0.1"), "confirmations": 1, "blockhash": blockhash, "blockheight": blockheight, "trusted": True})
 
         self.log.info("Test send-to-self on node0")
         txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), 0.2)
