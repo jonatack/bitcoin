@@ -164,9 +164,8 @@ static void WalletTxToJSON(const CWallet& wallet, const CWalletTx& wtx, UniValue
         int64_t block_time;
         CHECK_NONFATAL(chain.findBlock(wtx.m_confirm.hashBlock, FoundBlock().time(block_time)));
         entry.pushKV("blocktime", block_time);
-    } else {
-        entry.pushKV("trusted", CachedTxIsTrusted(wallet, wtx));
     }
+    entry.pushKV("trusted", CachedTxIsTrusted(wallet, wtx));
     uint256 hash = wtx.GetHash();
     entry.pushKV("txid", hash.GetHex());
     UniValue conflicts(UniValue::VARR);
@@ -1389,7 +1388,7 @@ static const std::vector<RPCResult> TransactionDescriptionString()
     return{{RPCResult::Type::NUM, "confirmations", "The number of confirmations for the transaction. Negative confirmations means the\n"
                "transaction conflicted that many blocks ago."},
            {RPCResult::Type::BOOL, "generated", /* optional */ true, "Only present if transaction only input is a coinbase one."},
-           {RPCResult::Type::BOOL, "trusted", /* optional */ true, "Only present if we consider transaction to be trusted and so safe to spend from."},
+           {RPCResult::Type::BOOL, "trusted", "Whether we consider the transaction to be trusted and safe to spend from."},
            {RPCResult::Type::STR_HEX, "blockhash", /* optional */ true, "The block hash containing the transaction."},
            {RPCResult::Type::NUM, "blockheight", /* optional */ true, "The block height containing the transaction."},
            {RPCResult::Type::NUM, "blockindex", /* optional */ true, "The index of the transaction in the block that includes it."},
