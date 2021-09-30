@@ -149,6 +149,7 @@ class AbandonConflictTest(BitcoinTestFramework):
         assert_equal(newbalance, balance - Decimal("24.9996"))
         balance = newbalance
 
+        self.log.info("Test double spend and conflicted transactions")
         # Create a double spend of AB1 by spending again from only A's 10 output
         # Mine double spend from node 1
         inputs = []
@@ -162,6 +163,24 @@ class AbandonConflictTest(BitcoinTestFramework):
 
         self.connect_nodes(0, 1)
         self.sync_blocks()
+
+        wallet_conflicts = [t for t in self.nodes[0].listtransactions() if len(t['walletconflicts']) > 0]
+
+        # Check the double spend transaction.
+        double_spends = [t for t in wallet_conflicts if t['confirmations'] == 1]
+        assert_equal(len(double_spends), 1)
+        assert_equal(double_spends[0]['abandoned'], False)
+        assert "trusted" not in double_spends[0].keys()
+        double_spend_ids = [double_spends[0]['txid']]
+
+        # Check the 2 conflicted transactions.
+        conflicted = [t for t in wallet_conflicts if t['confirmations'] == -1]
+        assert_equal(len(conflicted), 2)
+        for tx in conflicted:
+            assert_equal(tx['abandoned'], False)
+            assert_equal(tx['confirmations'], -1)
+            assert_equal(tx['trusted'], False)
+            assert_equal(tx['walletconflicts'], double_spend_ids)
 
         # Verify that B and C's 10 BTC outputs are available for spending again because AB1 is now conflicted
         newbalance = self.nodes[0].getbalance()
