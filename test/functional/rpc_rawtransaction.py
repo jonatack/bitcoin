@@ -123,6 +123,7 @@ class RawTransactionsTest(BitcoinTestFramework):
             # With block hash; correctly get raw transaction by providing the correct block.
             gottx = self.nodes[n].getrawtransaction(txid=tx, verbose=True, blockhash=block1)
             assert_equal(gottx['txid'], tx)
+            assert_equal(gottx['hex'], expected_txid)
             assert_equal(gottx['in_active_chain'], True)
 
             # We should not get the tx if we provide an unrelated block
