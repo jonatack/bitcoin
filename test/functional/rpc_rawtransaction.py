@@ -74,7 +74,6 @@ class RawTransactionsTest(BitcoinTestFramework):
 
     def run_test(self):
         self.log.info("Prepare some coins for multiple *rawtransaction commands")
-        self.generate(self.nodes[2], 1)
         self.generate(self.nodes[0], COINBASE_MATURITY + 1)
         for amount in [1.5, 1.0, 5.0]:
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), amount)
