@@ -289,12 +289,12 @@ class RawTransactionsTest(BitcoinTestFramework):
         fee_exceeds_max = "Fee exceeds maximum configured by user (e.g. -maxtxfee, maxfeerate)"
 
         # Test a transaction with a small fee.
-        txId = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1.0)
-        rawTx = self.nodes[0].getrawtransaction(txId, True)
+        txid = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1.0)
+        rawTx = self.nodes[0].getrawtransaction(txid, True)
         vout = next(o for o in rawTx['vout'] if o['value'] == Decimal('1.00000000'))
 
         self.sync_all()
-        inputs = [{"txid": txId, "vout": vout['n']}]
+        inputs = [{"txid": txid, "vout": vout['n']}]
         # Fee 10,000 satoshis, (1 - (10000 sat * 0.00000001 BTC/sat)) = 0.9999
         outputs = {self.nodes[0].getnewaddress(): Decimal("0.99990000")}
         rawTx = self.nodes[2].createrawtransaction(inputs, outputs)
@@ -313,12 +313,12 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.nodes[2].sendrawtransaction(hexstring=rawTxSigned['hex'])
 
         # Test a transaction with a large fee.
-        txId = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1.0)
-        rawTx = self.nodes[0].getrawtransaction(txId, True)
+        txid2 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1.0)
+        rawTx = self.nodes[0].getrawtransaction(txid2, True)
         vout = next(o for o in rawTx['vout'] if o['value'] == Decimal('1.00000000'))
 
         self.sync_all()
-        inputs = [{"txid": txId, "vout": vout['n']}]
+        inputs = [{"txid": txid2, "vout": vout['n']}]
         # Fee 2,000,000 satoshis, (1 - (2000000 sat * 0.00000001 BTC/sat)) = 0.98
         outputs = {self.nodes[0].getnewaddress() : Decimal("0.98000000")}
         rawTx = self.nodes[2].createrawtransaction(inputs, outputs)
@@ -408,7 +408,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         bal = self.nodes[2].getbalance()
 
         # send 1.2 BTC to msig adr
-        txId = self.nodes[0].sendtoaddress(mSigObj, 1.2)
+        self.nodes[0].sendtoaddress(mSigObj, 1.2)
         self.sync_all()
         self.generate(self.nodes[0], 1)
         # node2 has both keys of the 2of2 ms addr, tx should affect the balance
@@ -427,8 +427,8 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         mSigObj = self.nodes[2].addmultisigaddress(2, [addr1Obj['pubkey'], addr2Obj['pubkey'], addr3Obj['pubkey']])['address']
 
-        txId = self.nodes[0].sendtoaddress(mSigObj, 2.2)
-        decTx = self.nodes[0].gettransaction(txId)
+        txid = self.nodes[0].sendtoaddress(mSigObj, 2.2)
+        decTx = self.nodes[0].gettransaction(txid)
         rawTx = self.nodes[0].decoderawtransaction(decTx['hex'])
         self.sync_all()
         self.generate(self.nodes[0], 1)
@@ -437,12 +437,12 @@ class RawTransactionsTest(BitcoinTestFramework):
         # NODE2 HAS TWO OF THREE KEYS AND THE FUNDS SHOULD BE SPENDABLE AND COUNT AT BALANCE CALCULATION
         assert_equal(self.nodes[2].getbalance(), bal)  # for now, assume the funds of a 2of3 multisig tx are not marked as spendable
 
-        txDetails = self.nodes[0].gettransaction(txId, True)
+        txDetails = self.nodes[0].gettransaction(txid, True)
         rawTx = self.nodes[0].decoderawtransaction(txDetails['hex'])
         vout = next(o for o in rawTx['vout'] if o['value'] == Decimal('2.20000000'))
 
         bal = self.nodes[0].getbalance()
-        inputs = [{"txid": txId, "vout": vout['n'], "scriptPubKey": vout['scriptPubKey']['hex'], "amount": vout['value']}]
+        inputs = [{"txid": txid, "vout": vout['n'], "scriptPubKey": vout['scriptPubKey']['hex'], "amount": vout['value']}]
         outputs = {self.nodes[0].getnewaddress(): 2.19}
         rawTx = self.nodes[2].createrawtransaction(inputs, outputs)
         rawTxPartialSigned = self.nodes[1].signrawtransactionwithwallet(rawTx, inputs)
@@ -468,20 +468,20 @@ class RawTransactionsTest(BitcoinTestFramework):
         mSigObj = self.nodes[2].addmultisigaddress(2, [addr1Obj['pubkey'], addr2Obj['pubkey']])['address']
         mSigObjValid = self.nodes[2].getaddressinfo(mSigObj)
 
-        txId = self.nodes[0].sendtoaddress(mSigObj, 2.2)
-        decTx = self.nodes[0].gettransaction(txId)
+        txid2 = self.nodes[0].sendtoaddress(mSigObj, 2.2)
+        decTx = self.nodes[0].gettransaction(txid2)
         rawTx2 = self.nodes[0].decoderawtransaction(decTx['hex'])
         self.sync_all()
         self.generate(self.nodes[0], 1)
 
         assert_equal(self.nodes[2].getbalance(), bal)  # the funds of a 2of2 multisig tx should not be marked as spendable
 
-        txDetails = self.nodes[0].gettransaction(txId, True)
+        txDetails = self.nodes[0].gettransaction(txid2, True)
         rawTx2 = self.nodes[0].decoderawtransaction(txDetails['hex'])
         vout = next(o for o in rawTx2['vout'] if o['value'] == Decimal('2.20000000'))
 
         bal = self.nodes[0].getbalance()
-        inputs = [{"txid": txId, "vout": vout['n'], "scriptPubKey": vout['scriptPubKey']['hex'], "redeemScript": mSigObjValid['hex'], "amount": vout['value']}]
+        inputs = [{"txid": txid2, "vout": vout['n'], "scriptPubKey": vout['scriptPubKey']['hex'], "redeemScript": mSigObjValid['hex'], "amount": vout['value']}]
         outputs = {self.nodes[0].getnewaddress(): 2.19}
         rawTx2 = self.nodes[2].createrawtransaction(inputs, outputs)
         rawTxPartialSigned1 = self.nodes[1].signrawtransactionwithwallet(rawTx2, inputs)
