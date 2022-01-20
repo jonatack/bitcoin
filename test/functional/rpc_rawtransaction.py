@@ -103,31 +103,18 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         for n in [0, 3]:
             self.log.info(f"Test getrawtransaction {'with' if n == 0 else 'without'} -txindex")
-            # 1. valid parameters - only supply txid
-            assert_equal(self.nodes[n].getrawtransaction(txId), rawTxSigned['hex'])
 
-            # 2. valid parameters - supply txid and 0 for non-verbose
-            assert_equal(self.nodes[n].getrawtransaction(txId, 0), rawTxSigned['hex'])
+            # With valid boolean values for verbose
+            for verbose in [None, 0, False]:
+                assert_equal(self.nodes[n].getrawtransaction(txId, verbose), rawTxSigned['hex'])
+            for verbose in [1, True]:
+                # Only check the "hex" field of the output so we don't need to
+                # update this test every time the output format changes.
+                assert_equal(self.nodes[n].getrawtransaction(txId, verbose)['hex'], rawTxSigned['hex'])
 
-            # 3. valid parameters - supply txid and False for non-verbose
-            assert_equal(self.nodes[n].getrawtransaction(txId, False), rawTxSigned['hex'])
-
-            # 4. valid parameters - supply txid and 1 for verbose.
-            # We only check the "hex" field of the output so we don't need to update this test every time the output format changes.
-            assert_equal(self.nodes[n].getrawtransaction(txId, 1)["hex"], rawTxSigned['hex'])
-
-            # 5. valid parameters - supply txid and True for non-verbose
-            assert_equal(self.nodes[n].getrawtransaction(txId, True)["hex"], rawTxSigned['hex'])
-
-            # 6. invalid parameters - supply txid and invalid boolean values (strings) for verbose
-            for value in ["True", "False"]:
+            # With invalid boolean values for verbose
+            for value in ["True", "False", [], {}]:
                 assert_raises_rpc_error(-1, "not a boolean", self.nodes[n].getrawtransaction, txid=txId, verbose=value)
-
-            # 7. invalid parameters - supply txid and empty array
-            assert_raises_rpc_error(-1, "not a boolean", self.nodes[n].getrawtransaction, txId, [])
-
-            # 8. invalid parameters - supply txid and empty dict
-            assert_raises_rpc_error(-1, "not a boolean", self.nodes[n].getrawtransaction, txId, {})
 
         # Make a tx by sending, then generate 2 blocks; block1 has the tx in it
         tx = self.nodes[2].sendtoaddress(self.nodes[1].getnewaddress(), 1)
