@@ -95,8 +95,10 @@ class RawTransactionsTest(BitcoinTestFramework):
         expected_txid = self.nodes[2].getrawtransaction(tx)
         block1, block2 = self.generate(self.nodes[2], 2)
 
-        err_msg = "No such mempool transaction. Use -txindex or provide a block hash to enable" \
-                  " blockchain transaction queries. Use gettransaction for wallet transactions."
+        non_existing_txid = 64 * "0"
+        msg1 = "No such mempool or blockchain transaction."
+        msg2 = "No such mempool transaction. Use -txindex or provide a block hash to enable" \
+               " blockchain transaction queries. Use gettransaction for wallet transactions."
 
         for n in [0, 3]:
             self.log.info(f"Test getrawtransaction {'with' if n == 0 else 'without'} -txindex")
@@ -111,10 +113,11 @@ class RawTransactionsTest(BitcoinTestFramework):
                     assert_equal(gottx['txid'], tx)
                     assert_equal(gottx['hex'], expected_txid)
                     assert 'in_active_chain' not in gottx.keys()
+                assert_raises_rpc_error(-5, msg1, self.nodes[n].getrawtransaction, non_existing_txid)
             else:
                 # Without -txindex, expect to raise
                 for verbose in [None, 0, False, 1, True]:
-                    assert_raises_rpc_error(-5, err_msg, self.nodes[n].getrawtransaction, tx, verbose)
+                    assert_raises_rpc_error(-5, msg2, self.nodes[n].getrawtransaction, tx, verbose)
 
             # With invalid boolean values for verbose
             for value in ["True", "False", [], {}]:
