@@ -100,6 +100,9 @@ class RawTransactionsTest(BitcoinTestFramework):
         rawTxSigned = self.nodes[1].signrawtransactionwithwallet(rawTx)
         txId = self.nodes[1].sendrawtransaction(rawTxSigned['hex'])
         self.generateblock(self.nodes[0], output=self.nodes[0].getnewaddress(), transactions=[rawTxSigned['hex']])
+        # Make a tx by sending, then generate 2 blocks; block1 has the tx in it
+        tx = self.nodes[2].sendtoaddress(self.nodes[1].getnewaddress(), 1)
+        block1, block2 = self.generate(self.nodes[2], 2)
 
         err_msg = "No such mempool transaction. Use -txindex or provide a block hash to enable" \
                   " blockchain transaction queries. Use gettransaction for wallet transactions."
@@ -113,9 +116,10 @@ class RawTransactionsTest(BitcoinTestFramework):
                 for verbose in [None, 0, False]:
                     assert_equal(self.nodes[n].getrawtransaction(txId, verbose), rawTxSigned['hex'])
                 for verbose in [1, True]:
-                    # Only check the "hex" field of the output so we don't need
-                    # to update this test every time the output format changes.
-                    assert_equal(self.nodes[n].getrawtransaction(txId, verbose)['hex'], rawTxSigned['hex'])
+                    gottx = self.nodes[n].getrawtransaction(txId, verbose)
+                    assert_equal(gottx['txid'], txId)
+                    assert_equal(gottx['hex'], rawTxSigned['hex'])
+                    assert 'in_active_chain' not in gottx.keys()
             else:
                 # Without -txindex, expect to raise
                 for verbose in [None, 0, False, 1, True]:
@@ -125,23 +129,11 @@ class RawTransactionsTest(BitcoinTestFramework):
             for value in ["True", "False", [], {}]:
                 assert_raises_rpc_error(-1, "not a boolean", self.nodes[n].getrawtransaction, txid=txId, verbose=value)
 
-        # Make a tx by sending, then generate 2 blocks; block1 has the tx in it
-        tx = self.nodes[2].sendtoaddress(self.nodes[1].getnewaddress(), 1)
-        block1, block2 = self.generate(self.nodes[2], 2)
-        for n in [0, 3]:
-            self.log.info(f"Test getrawtransaction {'with' if n == 0 else 'without'} -txindex, with blockhash")
-            # We should be able to get the raw transaction by providing the correct block
+            # With block hash; correctly get raw transaction by providing the correct block.
             gottx = self.nodes[n].getrawtransaction(txid=tx, verbose=True, blockhash=block1)
             assert_equal(gottx['txid'], tx)
             assert_equal(gottx['in_active_chain'], True)
-            if n == 0:
-                self.log.info("Test getrawtransaction with -txindex, without blockhash: 'in_active_chain' should be absent")
-                gottx = self.nodes[n].getrawtransaction(txid=tx, verbose=True)
-                assert_equal(gottx['txid'], tx)
-                assert 'in_active_chain' not in gottx
-            else:
-                self.log.info("Test getrawtransaction without -txindex, without blockhash: expect the call to raise")
-                assert_raises_rpc_error(-5, err_msg, self.nodes[n].getrawtransaction, txid=tx, verbose=True)
+
             # We should not get the tx if we provide an unrelated block
             assert_raises_rpc_error(-5, "No such transaction found", self.nodes[n].getrawtransaction, txid=tx, blockhash=block2)
             # An invalid block hash should raise the correct errors
