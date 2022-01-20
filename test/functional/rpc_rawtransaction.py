@@ -24,7 +24,6 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
-    find_vout_for_address,
 )
 
 
@@ -91,16 +90,9 @@ class RawTransactionsTest(BitcoinTestFramework):
             self.raw_multisig_transaction_legacy_tests()
 
     def getrawtransaction_tests(self):
-        addr = self.nodes[1].getnewaddress()
-        txid = self.nodes[0].sendtoaddress(addr, 10)
-        self.generate(self.nodes[0], 1)
-        vout = find_vout_for_address(self.nodes[1], txid, addr)
-        rawTx = self.nodes[1].createrawtransaction([{'txid': txid, 'vout': vout}], {self.nodes[1].getnewaddress(): 9.999})
-        rawTxSigned = self.nodes[1].signrawtransactionwithwallet(rawTx)
-        txId = self.nodes[1].sendrawtransaction(rawTxSigned['hex'])
-        self.generateblock(self.nodes[0], output=self.nodes[0].getnewaddress(), transactions=[rawTxSigned['hex']])
         # Make a tx by sending, then generate 2 blocks; block1 has the tx in it
         tx = self.nodes[2].sendtoaddress(self.nodes[1].getnewaddress(), 1)
+        expected_txid = self.nodes[2].getrawtransaction(tx)
         block1, block2 = self.generate(self.nodes[2], 2)
 
         err_msg = "No such mempool transaction. Use -txindex or provide a block hash to enable" \
@@ -113,20 +105,20 @@ class RawTransactionsTest(BitcoinTestFramework):
             if n == 0:
                 # With -txindex
                 for verbose in [None, 0, False]:
-                    assert_equal(self.nodes[n].getrawtransaction(txId, verbose), rawTxSigned['hex'])
+                    assert_equal(self.nodes[n].getrawtransaction(tx, verbose), expected_txid)
                 for verbose in [1, True]:
-                    gottx = self.nodes[n].getrawtransaction(txId, verbose)
-                    assert_equal(gottx['txid'], txId)
-                    assert_equal(gottx['hex'], rawTxSigned['hex'])
+                    gottx = self.nodes[n].getrawtransaction(tx, verbose)
+                    assert_equal(gottx['txid'], tx)
+                    assert_equal(gottx['hex'], expected_txid)
                     assert 'in_active_chain' not in gottx.keys()
             else:
                 # Without -txindex, expect to raise
                 for verbose in [None, 0, False, 1, True]:
-                    assert_raises_rpc_error(-5, err_msg, self.nodes[n].getrawtransaction, txId, verbose)
+                    assert_raises_rpc_error(-5, err_msg, self.nodes[n].getrawtransaction, tx, verbose)
 
             # With invalid boolean values for verbose
             for value in ["True", "False", [], {}]:
-                assert_raises_rpc_error(-1, "not a boolean", self.nodes[n].getrawtransaction, txid=txId, verbose=value)
+                assert_raises_rpc_error(-1, "not a boolean", self.nodes[n].getrawtransaction, txid=tx, verbose=value)
 
             # With block hash; correctly get raw transaction by providing the correct block.
             gottx = self.nodes[n].getrawtransaction(txid=tx, verbose=True, blockhash=block1)
