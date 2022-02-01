@@ -1456,12 +1456,7 @@ void CChainState::InitCoinsCache(size_t cache_size_bytes)
     m_coins_views->InitCache();
 }
 
-// Note that though this is marked const, we may end up modifying `m_cached_finished_ibd`, which
-// is a performance-related implementation detail. This function must be marked
-// `const` so that `CValidationInterface` clients (which are given a `const CChainState*`)
-// can call it.
-//
-bool CChainState::IsInitialBlockDownload() const
+bool CChainState::IsInitialBlockDownload()
 {
     // Optimization: pre-test latch before taking the lock.
     if (m_cached_finished_ibd.load(std::memory_order_relaxed))
