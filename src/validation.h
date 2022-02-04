@@ -479,11 +479,9 @@ protected:
 
     /**
      * Whether this chainstate is undergoing initial block download.
-     *
-     * Mutable because we need to be able to mark IsInitialBlockDownload()
-     * const, which latches this for caching purposes.
+     * IsInitialBlockDownload() latches this for caching purposes.
      */
-    mutable std::atomic<bool> m_cached_finished_ibd{false};
+    std::atomic<bool> m_cached_finished_ibd{false};
 
     //! Optional mempool that is kept in sync with the chain.
     //! Only the active chainstate has a mempool.
