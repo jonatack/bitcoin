@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -395,6 +396,7 @@ private:
         std::string age;
         double min_ping;
         double ping;
+        std::optional<int64_t> time_offset;
         int64_t addr_processed;
         int64_t addr_rate_limited;
         int64_t last_blck;
@@ -472,7 +474,7 @@ public:
             const int8_t network_id{NetworkStringToId(network)};
             if (network_id == UNKNOWN_NETWORK) continue;
             const bool is_outbound{!peer["inbound"].get_bool()};
-            const bool is_block_relay{!peer["relaytxes"].get_bool()};
+            const bool is_block_relay{peer["relaytxes"].isNull() ? false : !peer["relaytxes"].get_bool()};
             const std::string conn_type{peer["connection_type"].get_str()};
             ++m_counts.at(is_outbound).at(network_id);      // in/out by network
             ++m_counts.at(is_outbound).at(NETWORKS.size()); // in/out overall
@@ -485,6 +487,7 @@ public:
                 const int peer_id{peer["id"].get_int()};
                 const int mapped_as{peer["mapped_as"].isNull() ? 0 : peer["mapped_as"].get_int()};
                 const int version{peer["version"].get_int()};
+                const std::optional<int64_t>& time_offset{peer["timeoffset"].isNull() ? std::nullopt : std::optional<int64_t>{peer["timeoffset"].get_int64()}};
                 const int64_t addr_processed{peer["addr_processed"].isNull() ? 0 : peer["addr_processed"].get_int64()};
                 const int64_t addr_rate_limited{peer["addr_rate_limited"].isNull() ? 0 : peer["addr_rate_limited"].get_int64()};
                 const int64_t conn_time{peer["conntime"].get_int64()};
@@ -500,7 +503,7 @@ public:
                 const bool is_addr_relay_enabled{peer["addr_relay_enabled"].isNull() ? false : peer["addr_relay_enabled"].get_bool()};
                 const bool is_bip152_hb_from{peer["bip152_hb_from"].get_bool()};
                 const bool is_bip152_hb_to{peer["bip152_hb_to"].get_bool()};
-                m_peers.push_back({addr, sub_version, conn_type, network, age, min_ping, ping, addr_processed, addr_rate_limited, last_blck, last_recv, last_send, last_trxn, peer_id, mapped_as, version, is_addr_relay_enabled, is_bip152_hb_from, is_bip152_hb_to, is_block_relay, is_outbound});
+                m_peers.push_back({addr, sub_version, conn_type, network, age, min_ping, ping, time_offset, addr_processed, addr_rate_limited, last_blck, last_recv, last_send, last_trxn, peer_id, mapped_as, version, is_addr_relay_enabled, is_bip152_hb_from, is_bip152_hb_to, is_block_relay, is_outbound});
                 m_max_addr_length = std::max(addr.length() + 1, m_max_addr_length);
                 m_max_addr_processed_length = std::max(ToString(addr_processed).length(), m_max_addr_processed_length);
                 m_max_addr_rate_limited_length = std::max(ToString(addr_rate_limited).length(), m_max_addr_rate_limited_length);
@@ -516,7 +519,7 @@ public:
         // Report detailed peer connections list sorted by direction and minimum ping time.
         if (DetailsRequested() && !m_peers.empty()) {
             std::sort(m_peers.begin(), m_peers.end());
-            result += strprintf("<->   type   net  mping   ping send recv  txn  blk  hb %*s%*s%*s ",
+            result += strprintf("<->   type   net offset  mping   ping send recv  txn  blk  hb %*s%*s%*s ",
                                 m_max_addr_processed_length, "addrp",
                                 m_max_addr_rate_limited_length, "addrl",
                                 m_max_age_length, "age");
@@ -525,10 +528,11 @@ public:
             for (const Peer& peer : m_peers) {
                 std::string version{ToString(peer.version) + peer.sub_version};
                 result += strprintf(
-                    "%3s %6s %5s%7s%7s%5s%5s%5s%5s  %2s %*s%*s%*s%*i %*s %-*s%s\n",
+                    "%3s %6s %5s%7s%7s%7s%5s%5s%5s%5s  %2s %*s%*s%*s%*i %*s %-*s%s\n",
                     peer.is_outbound ? "out" : "in",
                     ConnectionTypeForNetinfo(peer.conn_type),
                     peer.network,
+                    peer.time_offset.has_value() ? ToString(peer.time_offset.value()) : "",
                     PingTimeToString(peer.min_ping),
                     PingTimeToString(peer.ping),
                     peer.last_send ? ToString(m_time_now - peer.last_send) : "",
@@ -550,7 +554,7 @@ public:
                     IsAddressSelected() ? peer.addr : "",
                     IsVersionSelected() && version != "0" ? version : "");
             }
-            result += strprintf("                     ms     ms  sec  sec  min  min                %*s\n\n", m_max_age_length, "min");
+            result += strprintf("                    sec     ms     ms  sec  sec  min  min                %*s\n\n", m_max_age_length, "min");
         }
 
         // Report peer connection totals by type.
@@ -631,6 +635,7 @@ public:
         "           \"feeler\" - short-lived connection for testing addresses\n"
         "           \"addr\"   - address fetch; short-lived connection for requesting addresses\n"
         "  net      Network the peer connected through (\"ipv4\", \"ipv6\", \"onion\", \"i2p\", or \"cjdns\")\n"
+        "  offset   Time offset for the peer, in seconds\n"
         "  mping    Minimum observed ping time, in milliseconds (ms)\n"
         "  ping     Last observed ping time, in milliseconds (ms)\n"
         "  send     Time since last message sent to the peer, in seconds\n"
