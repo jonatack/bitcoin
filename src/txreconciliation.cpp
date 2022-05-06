@@ -311,7 +311,7 @@ class ReconciliationState {
         // To be used for sketch extension of the exact same size.
         m_capacity_snapshot = capacity;
 
-        sketch = MakeMinisketch32(capacity);
+        sketch = node::MakeMinisketch32(capacity);
 
         for (const auto& wtxid: m_local_set.m_wtxids) {
             uint32_t short_txid = ComputeShortID(wtxid);
@@ -458,7 +458,7 @@ class TxReconciliationTracker::Impl {
             local_sketch = recon_state->second.ComputeBaseSketch(remote_sketch_capacity);
         }
         if (remote_sketch_capacity != 0) {
-            remote_sketch = MakeMinisketch32(remote_sketch_capacity).Deserialize(skdata);
+            remote_sketch = node::MakeMinisketch32(remote_sketch_capacity).Deserialize(skdata);
         }
 
         // Remote sketch is empty in two cases per which reconciliation is pointless:

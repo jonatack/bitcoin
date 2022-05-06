@@ -116,7 +116,7 @@ class TxReconciliationTrackerTest
 
     Minisketch ComputeSketch(std::vector<uint256> txs, uint16_t capacity)
     {
-        Minisketch sketch = MakeMinisketch32(capacity);
+        Minisketch sketch = node::MakeMinisketch32(capacity);
         for (const auto& wtxid: txs) {
             uint32_t short_txid = ComputeShortID(wtxid);
             sketch.Add(short_txid);
