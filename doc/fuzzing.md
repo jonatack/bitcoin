@@ -105,7 +105,7 @@ Fuzzing on a harness compiled with `--with-sanitizers=address,fuzzer,undefined` 
 
 ## Reproduce a fuzzer crash reported by the CI
 
-- `cd` into the `qa-assets` directory and update it with `git pull qa-assets`
+- `cd` into the `qa-assets` directory and update it with `git pull`
 - locate the crash case described in the CI output, e.g. `Test unit written to
   ./crash-1bc91feec9fc00b107d97dc225a9f2cdaa078eb6`
 - make sure to compile with all sanitizers, if they are needed (fuzzing runs
