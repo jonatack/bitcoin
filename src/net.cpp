@@ -447,9 +447,8 @@ CNode* CConnman::ConnectNode(const CAddress& addr, const char *pszDest, bool fCo
 
         // Look for an existing connection
         CNode* pnode = FindNode(static_cast<CService>(addr));
-        if (pnode)
-        {
-            LogPrintf("Failed to open new connection, already connected\n");
+        if (pnode) {
+            LogPrintf("Failed to open new connection to %s, already connected (peer=%d)\n", addr.ToString(), pnode->GetId());
             return nullptr;
         }
     }
@@ -479,7 +478,7 @@ CNode* CConnman::ConnectNode(const CAddress& addr, const char *pszDest, bool fCo
             LOCK(m_nodes_mutex);
             CNode* pnode = FindNode(static_cast<CService>(addrConnect));
             if (pnode) {
-                LogPrintf("Failed to open new connection, already connected\n");
+                LogPrintf("Failed to open new connection to %s, already connected (peer=%d)\n", addrConnect.ToString(), pnode->GetId());
                 return nullptr;
             }
         }
