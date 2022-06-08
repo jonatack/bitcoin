@@ -89,6 +89,9 @@ New settings
 Tools and Utilities
 -------------------
 
+- A new `-loglevel` configuration option allows setting global and per-category
+  log severity levels: error, warning, info, debug (default: info). (#25287)
+
 Wallet
 ------
 
