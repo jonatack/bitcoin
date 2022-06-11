@@ -226,6 +226,8 @@ public:
     {
     }
 
+    virtual ~CBlockIndex() = default;
+
     FlatFilePos GetBlockPos() const EXCLUSIVE_LOCKS_REQUIRED(::cs_main)
     {
         AssertLockHeld(::cs_main);
@@ -261,7 +263,7 @@ public:
         return block;
     }
 
-    uint256 GetBlockHash() const
+    virtual uint256 GetBlockHash() const
     {
         return *phashBlock;
     }
@@ -301,7 +303,7 @@ public:
         return pbegin[(pend - pbegin) / 2];
     }
 
-    std::string ToString() const
+    virtual std::string ToString() const
     {
         return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
             pprev, nHeight,
@@ -402,7 +404,7 @@ public:
         READWRITE(obj.nNonce);
     }
 
-    uint256 GetBlockHash() const
+    uint256 GetBlockHash() const override
     {
         CBlockHeader block;
         block.nVersion = nVersion;
@@ -414,8 +416,7 @@ public:
         return block.GetHash();
     }
 
-
-    std::string ToString() const
+    std::string ToString() const override
     {
         std::string str = "CDiskBlockIndex(";
         str += CBlockIndex::ToString();
