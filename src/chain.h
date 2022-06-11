@@ -263,10 +263,8 @@ public:
         return block;
     }
 
-    virtual uint256 GetBlockHash() const
-    {
-        return *phashBlock;
-    }
+    uint256 GetBlockHash() const { return GetBlockHashImpl(); }
+    std::string ToString() const { return ToStringImpl(); }
 
     /**
      * Check whether this block's and all previous blocks' transactions have been
@@ -301,14 +299,6 @@ public:
 
         std::sort(pbegin, pend);
         return pbegin[(pend - pbegin) / 2];
-    }
-
-    virtual std::string ToString() const
-    {
-        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
-            pprev, nHeight,
-            hashMerkleRoot.ToString(),
-            GetBlockHash().ToString());
     }
 
     //! Check whether this block index entry is valid up to the passed validity level.
@@ -357,6 +347,14 @@ public:
     //! Efficiently find an ancestor of this block.
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
+
+private:
+    virtual uint256 GetBlockHashImpl() const { return *phashBlock; }
+    virtual std::string ToStringImpl() const
+    {
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+                         pprev, nHeight, hashMerkleRoot.ToString(), GetBlockHash().ToString());
+    }
 };
 
 arith_uint256 GetBlockProof(const CBlockIndex& block);
@@ -404,7 +402,8 @@ public:
         READWRITE(obj.nNonce);
     }
 
-    uint256 GetBlockHash() const override
+private:
+    uint256 GetBlockHashImpl() const override
     {
         CBlockHeader block;
         block.nVersion = nVersion;
@@ -416,14 +415,10 @@ public:
         return block.GetHash();
     }
 
-    std::string ToString() const override
+    std::string ToStringImpl() const override
     {
-        std::string str = "CDiskBlockIndex(";
-        str += CBlockIndex::ToString();
-        str += strprintf("\n                hashBlock=%s, hashPrev=%s)",
-            GetBlockHash().ToString(),
-            hashPrev.ToString());
-        return str;
+        return strprintf("CDiskBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s\n                hashPrev=%s)",
+                         pprev, nHeight, hashMerkleRoot.ToString(), GetBlockHash().ToString(), hashPrev.ToString());
     }
 };
 
