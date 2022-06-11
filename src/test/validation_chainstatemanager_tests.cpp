@@ -240,6 +240,15 @@ BOOST_FIXTURE_TEST_CASE(chainstatemanager_activate_snapshot, TestChain100Setup)
 
     BOOST_CHECK_EQUAL(tip->nChainTx, au_data.nChainTx);
 
+    // CDiskBlockIndex "is a" CBlockIndex, as it publicly inherits from it.
+    // Test that calling the same inherited interface functions on the same
+    // object yields identical behavior.
+    CDiskBlockIndex index{tip};
+    CBlockIndex *pB = &index;
+    CDiskBlockIndex *pD = &index;
+    BOOST_CHECK_EQUAL(pB->GetBlockHash(), pD->GetBlockHash());
+    BOOST_CHECK_EQUAL(pB->ToString(), pD->ToString());
+
     // To be checked against later when we try loading a subsequent snapshot.
     uint256 loaded_snapshot_blockhash{*chainman.SnapshotBlockhash()};
 
