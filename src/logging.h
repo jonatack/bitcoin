@@ -70,11 +70,12 @@ namespace BCLog {
         ALL         = ~(uint32_t)0,
     };
     enum class Level {
-        Debug = 0,
-        None = 1,
-        Info = 2,
-        Warning = 3,
-        Error = 4,
+        Trace = 0,
+        Debug,
+        Info,
+        Warning,
+        Error,
+        None,
     };
     constexpr auto DEFAULT_LOG_LEVEL = Level::Info;
     std::string LogLevelToStr(BCLog::Level level);

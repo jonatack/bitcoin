@@ -125,22 +125,10 @@ bool BCLog::Logger::WillLogCategory(BCLog::LogFlags category) const
 }
 bool BCLog::Logger::WillLogCategoryLevel(BCLog::LogFlags category, BCLog::Level level) const
 {
-    // Log messages at Warning and Error level unconditionally, so that
-    // important troubleshooting information doesn't get lost.
-    if (level >= BCLog::Level::Warning) {
-        return true;
-    }
-
+    if (level >= BCLog::Level::Info) return true; // unconditionally log Info/Warning/Error
     if (!WillLogCategory(category)) return false;
-
-    BCLog::Level threshold_level;
     auto it = m_category_log_levels.find(category);
-    if (it == m_category_log_levels.end()) {
-        threshold_level = m_log_level;
-    } else {
-        threshold_level = it->second;
-    }
-    return level >= threshold_level;
+    return level >= (it == m_category_log_levels.end() ? m_log_level : it->second);
 }
 
 bool BCLog::Logger::DefaultShrinkDebugFile() const
@@ -213,8 +201,8 @@ std::optional<BCLog::LogFlags> GetLogCategory(const std::string& str)
 std::string BCLog::LogLevelToStr(BCLog::Level level)
 {
     switch (level) {
-    case BCLog::Level::None:
-        return "none";
+    case BCLog::Level::Trace:
+        return "trace";
     case BCLog::Level::Debug:
         return "debug";
     case BCLog::Level::Info:
@@ -223,6 +211,8 @@ std::string BCLog::LogLevelToStr(BCLog::Level level)
         return "warning";
     case BCLog::Level::Error:
         return "error";
+    case BCLog::Level::None:
+        assert(false);
     }
     assert(false);
 }
@@ -264,11 +254,16 @@ std::vector<LogCategory> BCLog::Logger::LogCategoriesList() const
 
 std::vector<BCLog::Level> BCLog::Logger::LogLevelsList() const
 {
-    return {BCLog::Level::Debug, BCLog::Level::None, BCLog::Level::Info, BCLog::Level::Warning, BCLog::Level::Error};
+    std::vector<BCLog::Level> levels;
+    for (int n = 0; n < static_cast<int>(BCLog::Level::None); ++n) {
+        levels.emplace_back(static_cast<BCLog::Level>(n));
+    }
+    return levels;
 }
+
 std::string BCLog::Logger::LogLevelsString() const
 {
-    return Join(LogLevelsList(), ", ", [](const BCLog::Level level) { return LogLevelToStr(level); });
+    return Join(LogLevelsList(), ", ", [](BCLog::Level level) { return LogLevelToStr(level); });
 }
 
 std::string BCLog::Logger::LogTimestampStr(const std::string& str)
