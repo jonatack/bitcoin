@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <mutex>
+#include <optional>
 
 const char * const DEFAULT_DEBUGLOGFILE = "debug.log";
 
@@ -98,10 +99,12 @@ void BCLog::Logger::EnableCategory(BCLog::LogFlags flag)
 
 bool BCLog::Logger::EnableCategory(const std::string& str)
 {
-    BCLog::LogFlags flag;
-    if (!GetLogCategory(flag, str)) return false;
-    EnableCategory(flag);
-    return true;
+    if (auto flag = GetLogCategory(str)) {
+        EnableCategory(flag.value());
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void BCLog::Logger::DisableCategory(BCLog::LogFlags flag)
@@ -111,10 +114,12 @@ void BCLog::Logger::DisableCategory(BCLog::LogFlags flag)
 
 bool BCLog::Logger::DisableCategory(const std::string& str)
 {
-    BCLog::LogFlags flag;
-    if (!GetLogCategory(flag, str)) return false;
-    DisableCategory(flag);
-    return true;
+    if (auto flag = GetLogCategory(str)) {
+        DisableCategory(flag.value());
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool BCLog::Logger::WillLogCategory(BCLog::LogFlags category) const
@@ -169,19 +174,15 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::ALL, "all"},
 };
 
-bool GetLogCategory(BCLog::LogFlags& flag, const std::string& str)
+std::optional<BCLog::LogFlags> GetLogCategory(const std::string& str)
 {
-    if (str.empty()) {
-        flag = BCLog::ALL;
-        return true;
-    }
+    if (str.empty()) return BCLog::ALL;
     for (const CLogCategoryDesc& category_desc : LogCategories) {
         if (category_desc.category == str) {
-            flag = category_desc.flag;
-            return true;
+            return category_desc.flag;
         }
     }
-    return false;
+    return std::nullopt;
 }
 
 std::string LogLevelToStr(BCLog::Level level)

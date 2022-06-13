@@ -16,6 +16,7 @@
 #include <functional>
 #include <list>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -177,8 +178,8 @@ static inline bool LogAcceptCategory(BCLog::LogFlags category, BCLog::Level leve
     return LogInstance().WillLogCategory(category);
 }
 
-/** Return true if str parses as a log category and set the flag */
-bool GetLogCategory(BCLog::LogFlags& flag, const std::string& str);
+/** Return log category flag if str parses as a log category, otherwise std::nullopt. */
+std::optional<BCLog::LogFlags> GetLogCategory(const std::string& str);
 
 // Be conservative when using LogPrintf/error or other things which
 // unconditionally log to debug.log! It should not be the case that an inbound

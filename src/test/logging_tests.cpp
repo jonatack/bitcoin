@@ -127,10 +127,10 @@ BOOST_FIXTURE_TEST_CASE(logging_LogPrintMacros_CategoryName, LogSetup)
     std::vector<std::pair<BCLog::LogFlags, std::string>> expected_category_names;
     const auto category_names = SplitString(concated_categery_names, ',');
     for (const auto& category_name : category_names) {
-        BCLog::LogFlags category = BCLog::NONE;
         const auto trimmed_category_name = TrimString(category_name);
-        BOOST_TEST(GetLogCategory(category, trimmed_category_name));
-        expected_category_names.emplace_back(category, trimmed_category_name);
+        const auto category = GetLogCategory(trimmed_category_name);
+        BOOST_TEST(category.has_value());
+        expected_category_names.emplace_back(category.value(), trimmed_category_name);
     }
 
     std::vector<std::string> expected;
