@@ -288,7 +288,7 @@ private:
     /** Mark a transaction's inputs dirty, thus forcing the outputs to be recomputed */
     void MarkInputsDirty(const CTransactionRef& tx) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
-    void SyncMetaData(std::pair<TxSpends::iterator, TxSpends::iterator>) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+    void SyncMetaData(const std::pair<TxSpends::iterator, TxSpends::iterator>&) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
     void SyncTransaction(const CTransactionRef& tx, const SyncTxState& state, bool update_tx = true, bool rescanning_old_block = false) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
@@ -874,25 +874,25 @@ public:
     void ConnectScriptPubKeyManNotifiers();
 
     //! Instantiate a descriptor ScriptPubKeyMan from the WalletDescriptor and load it
-    void LoadDescriptorScriptPubKeyMan(uint256 id, WalletDescriptor& desc);
+    void LoadDescriptorScriptPubKeyMan(const uint256& id, WalletDescriptor& desc);
 
     //! Adds the active ScriptPubKeyMan for the specified type and internal. Writes it to the wallet file
     //! @param[in] id The unique id for the ScriptPubKeyMan
     //! @param[in] type The OutputType this ScriptPubKeyMan provides addresses for
     //! @param[in] internal Whether this ScriptPubKeyMan provides change addresses
-    void AddActiveScriptPubKeyMan(uint256 id, OutputType type, bool internal);
+    void AddActiveScriptPubKeyMan(const uint256& id, OutputType type, bool internal);
 
     //! Loads an active ScriptPubKeyMan for the specified type and internal. (used by LoadWallet)
     //! @param[in] id The unique id for the ScriptPubKeyMan
     //! @param[in] type The OutputType this ScriptPubKeyMan provides addresses for
     //! @param[in] internal Whether this ScriptPubKeyMan provides change addresses
-    void LoadActiveScriptPubKeyMan(uint256 id, OutputType type, bool internal);
+    void LoadActiveScriptPubKeyMan(const uint256& id, OutputType type, bool internal);
 
     //! Remove specified ScriptPubKeyMan from set of active SPK managers. Writes the change to the wallet file.
     //! @param[in] id The unique id for the ScriptPubKeyMan
     //! @param[in] type The OutputType this ScriptPubKeyMan provides addresses for
     //! @param[in] internal Whether this ScriptPubKeyMan provides change addresses
-    void DeactivateScriptPubKeyMan(uint256 id, OutputType type, bool internal);
+    void DeactivateScriptPubKeyMan(const uint256& id, OutputType type, bool internal);
 
     //! Create new DescriptorScriptPubKeyMans and add them to the wallet
     void SetupDescriptorScriptPubKeyMans() EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);

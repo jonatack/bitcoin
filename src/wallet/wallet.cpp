@@ -586,7 +586,7 @@ void CWallet::Close()
     GetDatabase().Close();
 }
 
-void CWallet::SyncMetaData(std::pair<TxSpends::iterator, TxSpends::iterator> range)
+void CWallet::SyncMetaData(const std::pair<TxSpends::iterator, TxSpends::iterator>& range)
 {
     // We want all the wallet transactions in range to have the same metadata as
     // the oldest (smallest nOrderPos).
@@ -3361,7 +3361,7 @@ void CWallet::ConnectScriptPubKeyManNotifiers()
     }
 }
 
-void CWallet::LoadDescriptorScriptPubKeyMan(uint256 id, WalletDescriptor& desc)
+void CWallet::LoadDescriptorScriptPubKeyMan(const uint256& id, WalletDescriptor& desc)
 {
     if (IsWalletFlagSet(WALLET_FLAG_EXTERNAL_SIGNER)) {
         auto spk_manager = std::unique_ptr<ScriptPubKeyMan>(new ExternalSignerScriptPubKeyMan(*this, desc));
@@ -3437,7 +3437,7 @@ void CWallet::SetupDescriptorScriptPubKeyMans()
     }
 }
 
-void CWallet::AddActiveScriptPubKeyMan(uint256 id, OutputType type, bool internal)
+void CWallet::AddActiveScriptPubKeyMan(const uint256& id, OutputType type, bool internal)
 {
     WalletBatch batch(GetDatabase());
     if (!batch.WriteActiveScriptPubKeyMan(static_cast<uint8_t>(type), id, internal)) {
@@ -3446,7 +3446,7 @@ void CWallet::AddActiveScriptPubKeyMan(uint256 id, OutputType type, bool interna
     LoadActiveScriptPubKeyMan(id, type, internal);
 }
 
-void CWallet::LoadActiveScriptPubKeyMan(uint256 id, OutputType type, bool internal)
+void CWallet::LoadActiveScriptPubKeyMan(const uint256& id, OutputType type, bool internal)
 {
     // Activating ScriptPubKeyManager for a given output and change type is incompatible with legacy wallets.
     // Legacy wallets have only one ScriptPubKeyManager and it's active for all output and change types.
@@ -3466,7 +3466,7 @@ void CWallet::LoadActiveScriptPubKeyMan(uint256 id, OutputType type, bool intern
     NotifyCanGetAddressesChanged();
 }
 
-void CWallet::DeactivateScriptPubKeyMan(uint256 id, OutputType type, bool internal)
+void CWallet::DeactivateScriptPubKeyMan(const uint256& id, OutputType type, bool internal)
 {
     auto spk_man = GetScriptPubKeyMan(type, internal);
     if (spk_man != nullptr && spk_man->GetID() == id) {
