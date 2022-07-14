@@ -63,7 +63,7 @@ struct TransactionNotification
 {
 public:
     TransactionNotification() = default;
-    TransactionNotification(uint256 _hash, ChangeType _status, bool _showTransaction):
+    TransactionNotification(const uint256& _hash, ChangeType _status, bool _showTransaction):
         hash(_hash), status(_status), showTransaction(_showTransaction) {}
 
     void invoke(QObject *ttm)

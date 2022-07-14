@@ -36,7 +36,7 @@ BOOST_FIXTURE_TEST_SUITE(validation_block_tests, MinerTestingSetup)
 struct TestSubscriber final : public CValidationInterface {
     uint256 m_expected_tip;
 
-    explicit TestSubscriber(uint256 tip) : m_expected_tip(tip) {}
+    explicit TestSubscriber(const uint256& tip) : m_expected_tip(tip) {}
 
     void UpdatedBlockTip(const CBlockIndex* pindexNew, const CBlockIndex* pindexFork, bool fInitialDownload) override
     {
