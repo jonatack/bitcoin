@@ -506,7 +506,7 @@ void TxConfirmStats::removeTx(unsigned int entryHeight, unsigned int nBestSeenHe
 // tracked. Txs that were part of a block have already been removed in
 // processBlockTx to ensure they are never double tracked, but it is
 // of no harm to try to remove them again.
-bool CBlockPolicyEstimator::removeTx(uint256 hash, bool inBlock)
+bool CBlockPolicyEstimator::removeTx(const uint256& hash, bool inBlock)
 {
     LOCK(m_cs_fee_estimator);
     return _removeTx(hash, inBlock);
