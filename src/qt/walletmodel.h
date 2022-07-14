@@ -135,7 +135,7 @@ public:
 
     UnlockContext requestUnlock();
 
-    bool bumpFee(uint256 hash, uint256& new_hash);
+    bool bumpFee(const uint256& hash, uint256& new_hash);
     bool displayAddress(std::string sAddress) const;
 
     static bool isWalletEnabled();
