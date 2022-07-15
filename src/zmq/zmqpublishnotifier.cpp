@@ -259,7 +259,7 @@ bool CZMQPublishRawTransactionNotifier::NotifyTransaction(const CTransaction &tr
 
 // Helper function to send a 'sequence' topic message with the following structure:
 //    <32-byte hash> | <1-byte label> | <8-byte LE sequence> (optional)
-static bool SendSequenceMsg(CZMQAbstractPublishNotifier& notifier, uint256 hash, char label, std::optional<uint64_t> sequence = {})
+static bool SendSequenceMsg(CZMQAbstractPublishNotifier& notifier, const uint256& hash, char label, std::optional<uint64_t> sequence = {})
 {
     unsigned char data[sizeof(hash) + sizeof(label) + sizeof(uint64_t)];
     for (unsigned int i = 0; i < sizeof(hash); ++i) {
