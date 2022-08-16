@@ -106,7 +106,6 @@ code.
     must be unique.
 
 - **Miscellaneous**
-  - `++i` is preferred over `i++`.
   - `nullptr` is preferred over `NULL` or `(void*)0`.
   - `static_assert` is preferred over `assert` where possible. Generally; compile-time checking is preferred over run-time checking.
 
@@ -249,9 +248,10 @@ For example, to describe a function use:
 /**
  * ... Description ...
  *
- * @param[in]  arg1 input description...
- * @param[in]  arg2 input description...
- * @param[out] arg3 output description...
+ * @param[in]     arg1 description...
+ * @param[in]     arg2 description...
+ * @param[in,out] arg3 description...
+ * @param[out]    arg4 description...
  * @return Return cases...
  * @throws Error type and cases...
  * @pre  Pre-condition for function...
@@ -1275,12 +1275,12 @@ Release notes should be written for any PR that:
 
 - introduces a notable new feature
 - fixes a significant bug
-- changes an API or configuration model
+- changes an API or configuration option
 - makes any other visible change to the end-user experience.
 
-Release notes should be added to a PR-specific release note file at
-`/doc/release-notes-<PR number>.md` to avoid conflicts between multiple PRs.
-All `release-notes*` files are merged into a single
+When it seems likely to cause a merge conflict, a release note should be added
+in a PR-specific file named `/doc/release-notes-<PR number>.md`.  These
+`release-notes*` files are merged into a single
 [/doc/release-notes.md](/doc/release-notes.md) file prior to the release.
 
 RPC interface guidelines
