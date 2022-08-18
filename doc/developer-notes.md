@@ -74,10 +74,14 @@ tool to clean up patches automatically before submission.
   - No indentation for `public`/`protected`/`private` or for `namespace`.
   - No extra spaces inside parenthesis; don't do `( this )`.
   - No space after function names; one space after `if`, `for` and `while`.
-  - If an `if` only has a single-statement `then`-clause, it can appear
-    on the same line as the `if`, without braces. In every other case,
-    braces are required, and the `then` and `else` clauses must appear
-    correctly indented on a new line.
+  - If an `if` only has a single-statement `then`-clause with a simple action
+    (i.e. `return false;`) and no `else` clauses, it can optionally appear on
+    the same line as the `if`, without braces.  In every other case, braces are
+    required, and the `then` and `else` clauses must appear correctly indented
+    on a new line.  When in doubt, prefer to brace control statements.
+    - *Rationale*: CVE-2014-1266, the Apple "goto fail" vulnerability, see
+      https://dwheeler.com/essays/apple-goto-fail#braces). (Also improved clarity
+      when an error is raised while stepping through code with GDB.)
   - There's no hard limit on line width, but prefer to keep lines to <100
     characters if doing so does not decrease readability. Break up long
     function declarations over multiple lines using the Clang Format
