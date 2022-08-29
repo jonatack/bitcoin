@@ -121,6 +121,7 @@ std::string strSubVersion;
 
 void CConnman::AddAddrFetch(const std::string& strDest)
 {
+    AssertLockNotHeld(m_addr_fetches_mutex);
     LOCK(m_addr_fetches_mutex);
     m_addr_fetches.push_back(strDest);
 }
@@ -567,6 +568,7 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
 
 void CNode::CloseSocketDisconnect()
 {
+    AssertLockNotHeld(m_sock_mutex);
     fDisconnect = true;
     LOCK(m_sock_mutex);
     if (m_sock) {
@@ -608,6 +610,10 @@ Network CNode::ConnectedThroughNetwork() const
 #define X(name) stats.name = name
 void CNode::CopyStats(CNodeStats& stats)
 {
+    AssertLockNotHeld(m_subver_mutex);
+    AssertLockNotHeld(m_addr_local_mutex);
+    AssertLockNotHeld(cs_vSend);
+    AssertLockNotHeld(cs_vRecv);
     stats.nodeid = this->GetId();
     X(addr);
     X(addrBind);
@@ -652,6 +658,7 @@ void CNode::CopyStats(CNodeStats& stats)
 
 bool CNode::ReceiveMsgBytes(Span<const uint8_t> msg_bytes, bool& complete)
 {
+    AssertLockNotHeld(cs_vRecv);
     complete = false;
     const auto time = GetTime<std::chrono::microseconds>();
     LOCK(cs_vRecv);
@@ -812,6 +819,7 @@ void V1TransportSerializer::prepareForTransport(CSerializedNetMsg& msg, std::vec
 
 size_t CConnman::SocketSendData(CNode& node) const
 {
+    AssertLockHeld(node.cs_vSend);
     auto it = node.vSendMsg.begin();
     size_t nSentSize = 0;
 
@@ -1230,9 +1238,8 @@ Sock::EventsPerSock CConnman::GenerateWaitSockets(Span<CNode* const> nodes)
 void CConnman::SocketHandler()
 {
     AssertLockNotHeld(m_total_bytes_sent_mutex);
-
+    AssertLockNotHeld(mutexMsgProc);
     Sock::EventsPerSock events_per_sock;
-
     {
         const NodesSnapshot snap{*this, /*shuffle=*/false};
 
@@ -1259,10 +1266,12 @@ void CConnman::SocketHandlerConnected(const std::vector<CNode*>& nodes,
                                       const Sock::EventsPerSock& events_per_sock)
 {
     AssertLockNotHeld(m_total_bytes_sent_mutex);
+    AssertLockNotHeld(mutexMsgProc);
 
     for (CNode* pnode : nodes) {
-        if (interruptNet)
+        if (interruptNet) {
             return;
+        }
 
         //
         // Receive
@@ -1366,6 +1375,7 @@ void CConnman::SocketHandlerListening(const Sock::EventsPerSock& events_per_sock
 void CConnman::ThreadSocketHandler()
 {
     AssertLockNotHeld(m_total_bytes_sent_mutex);
+    AssertLockNotHeld(mutexMsgProc);
 
     SetSyscallSandboxPolicy(SyscallSandboxPolicy::NET);
     while (!interruptNet)
@@ -1378,6 +1388,7 @@ void CConnman::ThreadSocketHandler()
 
 void CConnman::WakeMessageHandler()
 {
+    AssertLockNotHeld(mutexMsgProc);
     {
         LOCK(mutexMsgProc);
         fMsgProcWake = true;
@@ -1387,6 +1398,8 @@ void CConnman::WakeMessageHandler()
 
 void CConnman::ThreadDNSAddressSeed()
 {
+    AssertLockNotHeld(m_addr_fetches_mutex);
+    AssertLockNotHeld(m_nodes_mutex);
     SetSyscallSandboxPolicy(SyscallSandboxPolicy::INITIALIZATION_DNS_SEED);
     FastRandomContext rng;
     std::vector<std::string> seeds = Params().DNSSeeds();
@@ -1507,6 +1520,7 @@ void CConnman::DumpAddresses()
 
 void CConnman::ProcessAddrFetch()
 {
+    AssertLockNotHeld(m_addr_fetches_mutex);
     std::string strDest;
     {
         LOCK(m_addr_fetches_mutex);
@@ -1575,6 +1589,7 @@ int CConnman::GetExtraBlockRelayCount() const
 
 void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
 {
+    AssertLockNotHeld(m_addr_fetches_mutex);
     SetSyscallSandboxPolicy(SyscallSandboxPolicy::NET_OPEN_CONNECTION);
     FastRandomContext rng;
     // Connect to specific addresses
@@ -1859,6 +1874,8 @@ std::vector<CAddress> CConnman::GetCurrentBlockRelayOnlyConns() const
 
 std::vector<AddedNodeInfo> CConnman::GetAddedNodeInfo() const
 {
+    AssertLockNotHeld(m_added_nodes_mutex);
+    AssertLockNotHeld(m_nodes_mutex);
     std::vector<AddedNodeInfo> ret;
 
     std::list<std::string> lAddresses(0);
@@ -1913,6 +1930,7 @@ std::vector<AddedNodeInfo> CConnman::GetAddedNodeInfo() const
 
 void CConnman::ThreadOpenAddedConnections()
 {
+    AssertLockNotHeld(m_added_nodes_mutex);
     SetSyscallSandboxPolicy(SyscallSandboxPolicy::NET_ADD_CONNECTION);
     while (true)
     {
@@ -1977,6 +1995,7 @@ void CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountFai
 
 void CConnman::ThreadMessageHandler()
 {
+    AssertLockNotHeld(mutexMsgProc);
     SetSyscallSandboxPolicy(SyscallSandboxPolicy::MESSAGE_HANDLER);
     while (!flagInterruptMsgProc)
     {
@@ -2257,6 +2276,9 @@ bool CConnman::InitBinds(const Options& options)
 bool CConnman::Start(CScheduler& scheduler, const Options& connOptions)
 {
     AssertLockNotHeld(m_total_bytes_sent_mutex);
+    AssertLockNotHeld(m_added_nodes_mutex);
+    AssertLockNotHeld(m_addr_fetches_mutex);
+    AssertLockNotHeld(mutexMsgProc);
     Init(connOptions);
 
     if (fListen && !InitBinds(connOptions)) {
@@ -2371,6 +2393,7 @@ static CNetCleanup instance_of_cnetcleanup;
 
 void CConnman::Interrupt()
 {
+    AssertLockNotHeld(mutexMsgProc);
     {
         LOCK(mutexMsgProc);
         flagInterruptMsgProc = true;
@@ -2513,6 +2536,7 @@ std::vector<CAddress> CConnman::GetAddresses(CNode& requestor, size_t max_addres
 
 bool CConnman::AddNode(const std::string& strNode)
 {
+    AssertLockNotHeld(m_added_nodes_mutex);
     LOCK(m_added_nodes_mutex);
     for (const std::string& it : m_added_nodes) {
         if (strNode == it) return false;
@@ -2524,8 +2548,9 @@ bool CConnman::AddNode(const std::string& strNode)
 
 bool CConnman::RemoveAddedNode(const std::string& strNode)
 {
+    AssertLockNotHeld(m_added_nodes_mutex);
     LOCK(m_added_nodes_mutex);
-    for(std::vector<std::string>::iterator it = m_added_nodes.begin(); it != m_added_nodes.end(); ++it) {
+    for (std::vector<std::string>::iterator it = m_added_nodes.begin(); it != m_added_nodes.end(); ++it) {
         if (strNode == *it) {
             m_added_nodes.erase(it);
             return true;
@@ -2536,6 +2561,7 @@ bool CConnman::RemoveAddedNode(const std::string& strNode)
 
 size_t CConnman::GetNodeCount(ConnectionDirection flags) const
 {
+    AssertLockNotHeld(m_added_nodes_mutex);
     LOCK(m_nodes_mutex);
     if (flags == ConnectionDirection::Both) // Shortcut if we want total
         return m_nodes.size();

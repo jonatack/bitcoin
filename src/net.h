@@ -689,6 +689,7 @@ public:
 
     void Init(const Options& connOptions) EXCLUSIVE_LOCKS_REQUIRED(!m_added_nodes_mutex, !m_total_bytes_sent_mutex)
     {
+        AssertLockNotHeld(m_added_nodes_mutex);
         AssertLockNotHeld(m_total_bytes_sent_mutex);
 
         nLocalServices = connOptions.nLocalServices;
@@ -798,7 +799,7 @@ public:
 
     bool AddNode(const std::string& node) EXCLUSIVE_LOCKS_REQUIRED(!m_added_nodes_mutex);
     bool RemoveAddedNode(const std::string& node) EXCLUSIVE_LOCKS_REQUIRED(!m_added_nodes_mutex);
-    std::vector<AddedNodeInfo> GetAddedNodeInfo() const EXCLUSIVE_LOCKS_REQUIRED(!m_added_nodes_mutex);
+    std::vector<AddedNodeInfo> GetAddedNodeInfo() const EXCLUSIVE_LOCKS_REQUIRED(!m_added_nodes_mutex, !m_nodes_mutex);
 
     /**
      * Attempts to open a connection. Currently only used from tests.
