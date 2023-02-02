@@ -57,6 +57,14 @@ static const int CONTINUE_EXECUTION=-1;
 static constexpr int8_t UNKNOWN_NETWORK{-1};
 static constexpr std::array NETWORKS{"ipv4", "ipv6", "onion", "i2p", "cjdns"};
 
+static int8_t NetworkStringToId(const std::string& str)
+{
+    for (size_t i = 0; i < NETWORKS.size(); ++i) {
+        if (str == NETWORKS[i]) return i;
+    }
+    return UNKNOWN_NETWORK;
+}
+
 /** Default number of blocks to generate for RPC generatetoaddress. */
 static const std::string DEFAULT_NBLOCKS = "1";
 
@@ -252,15 +260,6 @@ public:
 /** Process addrinfo requests */
 class AddrinfoRequestHandler : public BaseRequestHandler
 {
-private:
-    int8_t NetworkStringToId(const std::string& str) const
-    {
-        for (size_t i = 0; i < NETWORKS.size(); ++i) {
-            if (str == NETWORKS[i]) return i;
-        }
-        return UNKNOWN_NETWORK;
-    }
-
 public:
     UniValue PrepareRequest(const std::string& method, const std::vector<std::string>& args) override
     {
@@ -376,13 +375,6 @@ private:
     std::array<std::array<uint16_t, NETWORKS.size() + 1>, 3> m_counts{{{}}}; //!< Peer counts by (in/out/total, networks/total)
     uint8_t m_block_relay_peers_count{0};
     uint8_t m_manual_peers_count{0};
-    int8_t NetworkStringToId(const std::string& str) const
-    {
-        for (size_t i = 0; i < NETWORKS.size(); ++i) {
-            if (str == NETWORKS[i]) return i;
-        }
-        return UNKNOWN_NETWORK;
-    }
     uint8_t m_details_level{0}; //!< Optional user-supplied arg to set dashboard details level
     bool DetailsRequested() const { return m_details_level > 0 && m_details_level < 5; }
     bool IsAddressSelected() const { return m_details_level == 2 || m_details_level == 4; }
