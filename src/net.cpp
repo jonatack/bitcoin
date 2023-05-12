@@ -1855,7 +1855,7 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
                 std::tie(addr, addr_last_try) = addrman.Select();
             }
 
-            // Require outbound IPv4/IPv6 connections, other than feelers, to be to distinct network groups
+            // Require outbound IPv4/IPv6 connections, other than feelers, to be distinct network groups
             if (!fFeeler && outbound_ipv46_peer_netgroups.count(m_netgroupman.GetGroup(addr))) {
                 break;
             }
