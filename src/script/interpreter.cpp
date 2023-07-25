@@ -9,6 +9,7 @@
 #include <crypto/sha1.h>
 #include <crypto/sha256.h>
 #include <pubkey.h>
+#include <script/sighashtype.h>
 #include <script/script.h>
 #include <uint256.h>
 

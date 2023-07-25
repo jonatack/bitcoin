@@ -10,7 +10,6 @@
 #include <coins.h>
 #include <hash.h>
 #include <pubkey.h>
-#include <script/interpreter.h>
 #include <script/keyorigin.h>
 #include <script/standard.h>
 #include <uint256.h>

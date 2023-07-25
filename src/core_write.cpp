@@ -11,6 +11,7 @@
 #include <key_io.h>
 #include <script/descriptor.h>
 #include <script/script.h>
+#include <script/sighashtype.h>
 #include <script/standard.h>
 #include <serialize.h>
 #include <streams.h>

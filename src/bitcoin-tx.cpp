@@ -19,6 +19,7 @@
 #include <policy/policy.h>
 #include <primitives/transaction.h>
 #include <script/script.h>
+#include <script/sighashtype.h>
 #include <script/sign.h>
 #include <script/signingprovider.h>
 #include <univalue.h>

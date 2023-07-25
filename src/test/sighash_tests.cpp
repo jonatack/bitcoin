@@ -8,6 +8,7 @@
 #include <hash.h>
 #include <script/interpreter.h>
 #include <script/script.h>
+#include <script/sighashtype.h>
 #include <serialize.h>
 #include <streams.h>
 #include <test/data/sighash.json.h>

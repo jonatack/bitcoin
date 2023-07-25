@@ -17,6 +17,7 @@
 #include <policy/settings.h>
 #include <script/script.h>
 #include <script/script_error.h>
+#include <script/sighashtype.h>
 #include <script/sign.h>
 #include <script/signingprovider.h>
 #include <script/standard.h>

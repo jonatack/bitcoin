@@ -22,19 +22,6 @@ class CTransaction;
 class CTxOut;
 class uint256;
 
-/** Signature hash types/flags */
-enum
-{
-    SIGHASH_ALL = 1,
-    SIGHASH_NONE = 2,
-    SIGHASH_SINGLE = 3,
-    SIGHASH_ANYONECANPAY = 0x80,
-
-    SIGHASH_DEFAULT = 0, //!< Taproot only; implied when sighash byte is missing, and equivalent to SIGHASH_ALL
-    SIGHASH_OUTPUT_MASK = 3,
-    SIGHASH_INPUT_MASK = 0x80,
-};
-
 /** Script verification flags.
  *
  *  All flags are intended to be soft forks: the set of acceptable scripts under

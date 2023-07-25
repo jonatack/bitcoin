@@ -9,6 +9,7 @@
 #include <outputtype.h>
 #include <rpc/util.h>
 #include <script/descriptor.h>
+#include <script/sighashtype.h>
 #include <script/signingprovider.h>
 #include <tinyformat.h>
 #include <util/check.h>

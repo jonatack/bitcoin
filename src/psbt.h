@@ -10,6 +10,7 @@
 #include <primitives/transaction.h>
 #include <pubkey.h>
 #include <script/keyorigin.h>
+#include <script/sighashtype.h>
 #include <script/sign.h>
 #include <script/signingprovider.h>
 #include <span.h>

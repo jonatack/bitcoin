@@ -12,6 +12,7 @@
 #include <script/script.h>
 #include <script/script_error.h>
 #include <script/sigcache.h>
+#include <script/sighashtype.h>
 #include <script/sign.h>
 #include <script/signingprovider.h>
 #include <streams.h>

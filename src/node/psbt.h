@@ -7,6 +7,8 @@
 
 #include <psbt.h>
 
+#include <script/sighashtype.h>
+
 #include <optional>
 
 namespace node {
