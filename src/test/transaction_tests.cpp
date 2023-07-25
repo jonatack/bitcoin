@@ -15,12 +15,11 @@
 #include <key.h>
 #include <policy/policy.h>
 #include <policy/settings.h>
-#include <script/script.h>
 #include <script/script_error.h>
+#include <script/script_verify.h>
 #include <script/sighashtype.h>
 #include <script/sign.h>
 #include <script/signingprovider.h>
-#include <script/standard.h>
 #include <streams.h>
 #include <test/util/json.h>
 #include <test/util/random.h>

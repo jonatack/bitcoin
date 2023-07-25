@@ -7,6 +7,7 @@
 
 #include <crypto/sha256.h>
 #include <script/script.h>
+#include <uint256.h>
 
 static const std::vector<uint8_t> WITNESS_STACK_ELEM_OP_TRUE{uint8_t{OP_TRUE}};
 static const CScript P2WSH_OP_TRUE{

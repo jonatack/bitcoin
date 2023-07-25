@@ -5,7 +5,7 @@
 #include <consensus/validation.h>
 #include <policy/policy.h>
 #include <primitives/transaction.h>
-#include <script/script.h>
+#include <script/script_verify.h>
 #include <util/strencodings.h>
 #include <wallet/feebumper.h>
 #include <wallet/test/util.h>

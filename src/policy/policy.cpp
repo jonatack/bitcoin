@@ -14,7 +14,7 @@
 #include <policy/feerate.h>
 #include <primitives/transaction.h>
 #include <script/interpreter.h>
-#include <script/script.h>
+#include <script/script_verify.h>
 #include <script/standard.h>
 #include <serialize.h>
 #include <span.h>

@@ -7,6 +7,7 @@
 #include <interfaces/chain.h>
 #include <policy/fees.h>
 #include <policy/policy.h>
+#include <script/script_verify.h>
 #include <util/moneystr.h>
 #include <util/rbf.h>
 #include <util/translation.h>

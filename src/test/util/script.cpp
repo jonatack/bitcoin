@@ -4,6 +4,8 @@
 
 #include <test/util/script.h>
 
+#include <script/script_verify.h>
+
 bool IsValidFlagCombination(unsigned flags)
 {
     if (flags & SCRIPT_VERIFY_CLEANSTACK && ~flags & (SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_WITNESS)) return false;

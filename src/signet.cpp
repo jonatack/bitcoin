@@ -17,6 +17,8 @@
 #include <logging.h>
 #include <primitives/block.h>
 #include <primitives/transaction.h>
+#include <script/interpreter.h>
+#include <script/script_verify.h>
 #include <script/standard.h>
 #include <span.h>
 #include <streams.h>

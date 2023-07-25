@@ -9,6 +9,7 @@
 #include <attributes.h>
 #include <pubkey.h>
 #include <script/interpreter.h>
+#include <script/script_verify.h>
 #include <uint256.h>
 #include <util/hash_type.h>
 

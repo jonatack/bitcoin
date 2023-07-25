@@ -9,8 +9,8 @@
 #include <core_io.h>
 #include <key.h>
 #include <rpc/util.h>
-#include <script/script.h>
 #include <script/script_error.h>
+#include <script/script_verify.h>
 #include <script/sigcache.h>
 #include <script/sighashtype.h>
 #include <script/sign.h>

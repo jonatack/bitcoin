@@ -6,8 +6,8 @@
 
 #include <primitives/transaction.h>
 #include <pubkey.h>
+#include <script/script_verify.h>
 #include <script/interpreter.h>
-#include <serialize.h>
 #include <streams.h>
 #include <univalue.h>
 #include <util/strencodings.h>

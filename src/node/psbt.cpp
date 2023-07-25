@@ -8,6 +8,7 @@
 #include <node/psbt.h>
 #include <policy/policy.h>
 #include <policy/settings.h>
+#include <script/script_verify.h>
 #include <tinyformat.h>
 
 #include <numeric>

@@ -11,6 +11,7 @@
 #include <pubkey.h>
 #include <script/sighashtype.h>
 #include <script/script.h>
+#include <script/script_verify.h>
 #include <uint256.h>
 
 typedef std::vector<unsigned char> valtype;

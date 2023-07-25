@@ -11,6 +11,7 @@
 #include <consensus/validation.h>
 #include <primitives/transaction.h>
 #include <script/interpreter.h>
+#include <script/script_verify.h>
 #include <util/check.h>
 #include <util/moneystr.h>
 

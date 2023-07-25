@@ -7,7 +7,7 @@
 #if defined(HAVE_CONSENSUS_LIB)
 #include <script/bitcoinconsensus.h>
 #endif
-#include <script/script.h>
+#include <script/script_verify.h>
 #include <script/sighashtype.h>
 #include <script/standard.h>
 #include <streams.h>

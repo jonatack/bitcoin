@@ -11,9 +11,9 @@
 #include <primitives/transaction.h>
 #include <script/keyorigin.h>
 #include <script/miniscript.h>
+#include <script/script_verify.h>
 #include <script/sighashtype.h>
 #include <script/signingprovider.h>
-#include <script/standard.h>
 #include <uint256.h>
 #include <util/translation.h>
 #include <util/vector.h>

@@ -15,10 +15,10 @@
 #include <uint256.h>
 #include <crypto/ripemd160.h>
 #include <crypto/sha256.h>
-#include <script/interpreter.h>
 #include <script/miniscript.h>
 #include <script/standard.h>
 #include <script/script_error.h>
+#include <script/script_verify.h>
 
 namespace {
 

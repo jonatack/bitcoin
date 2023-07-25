@@ -6,7 +6,7 @@
 #include <hash.h>
 #include <key.h>
 #include <script/miniscript.h>
-#include <script/script.h>
+#include <script/script_verify.h>
 #include <test/fuzz/FuzzedDataProvider.h>
 #include <test/fuzz/fuzz.h>
 #include <test/fuzz/util.h>
