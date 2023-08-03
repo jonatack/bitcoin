@@ -456,7 +456,7 @@ static RPCHelpMan getmempoolancestors()
     if (!request.params[1].isNull())
         fVerbose = request.params[1].get_bool();
 
-    uint256 hash = ParseHashV(request.params[0], "parameter 1");
+    uint256 hash = ParseHashV(request.params[0], "txid");
 
     const CTxMemPool& mempool = EnsureAnyMemPool(request.context);
     LOCK(mempool.cs);
@@ -517,7 +517,7 @@ static RPCHelpMan getmempooldescendants()
     if (!request.params[1].isNull())
         fVerbose = request.params[1].get_bool();
 
-    uint256 hash = ParseHashV(request.params[0], "parameter 1");
+    uint256 hash = ParseHashV(request.params[0], "txid");
 
     const CTxMemPool& mempool = EnsureAnyMemPool(request.context);
     LOCK(mempool.cs);
@@ -569,7 +569,7 @@ static RPCHelpMan getmempoolentry()
         },
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    uint256 hash = ParseHashV(request.params[0], "parameter 1");
+    uint256 hash = ParseHashV(request.params[0], "txid");
 
     const CTxMemPool& mempool = EnsureAnyMemPool(request.context);
     LOCK(mempool.cs);

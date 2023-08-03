@@ -328,7 +328,7 @@ static RPCHelpMan getrawtransaction()
     const NodeContext& node = EnsureAnyNodeContext(request.context);
     ChainstateManager& chainman = EnsureChainman(node);
 
-    uint256 hash = ParseHashV(request.params[0], "parameter 1");
+    uint256 hash = ParseHashV(request.params[0], "txid");
     const CBlockIndex* blockindex = nullptr;
 
     if (hash == chainman.GetParams().GenesisBlock().hashMerkleRoot) {
@@ -349,7 +349,7 @@ static RPCHelpMan getrawtransaction()
     if (!request.params[2].isNull()) {
         LOCK(cs_main);
 
-        uint256 blockhash = ParseHashV(request.params[2], "parameter 3");
+        uint256 blockhash = ParseHashV(request.params[2], "blockhash");
         blockindex = chainman.m_blockman.LookupBlockIndex(blockhash);
         if (!blockindex) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block hash not found");
