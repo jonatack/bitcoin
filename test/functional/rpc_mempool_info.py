@@ -4,6 +4,8 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test RPCs that retrieve information from the mempool."""
 
+from operator import attrgetter
+
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -84,6 +86,10 @@ class RPCMempoolInfoTest(BitcoinTestFramework):
 
         self.log.info("Invalid txid provided")
         assert_raises_rpc_error(-3, "JSON value of type number for field txid is not of expected type string", self.nodes[0].gettxspendingprevout, [{'txid' : 42, 'vout' : 0}])
+        v = "ZZZ0000000000000000000000000000000000000000000000000000000000000"
+        for rpc in ["getmempoolancestors", "getmempooldescendants", "getmempoolentry"]:
+            assert_raises_rpc_error(-8, "txid must be of length 64 (not 3, for 'abc')", lambda: (attrgetter(rpc))(self.nodes[0])(txid="abc"))
+            assert_raises_rpc_error(-8, f"txid must be hexadecimal string (not '{v}')", lambda: (attrgetter(rpc))(self.nodes[0])(txid=v))
 
         self.log.info("Missing outputs")
         assert_raises_rpc_error(-8, "Invalid parameter, outputs are missing", self.nodes[0].gettxspendingprevout, [])
