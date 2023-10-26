@@ -6,9 +6,10 @@
 #define BITCOIN_TEST_UTIL_NET_H
 
 #include <compat/compat.h>
-#include <node/eviction.h>
-#include <netaddress.h>
 #include <net.h>
+#include <net_processing.h>
+#include <netaddress.h>
+#include <node/eviction.h>
 #include <util/sock.h>
 
 #include <array>
@@ -31,6 +32,12 @@ struct ConnmanTestMsg : public CConnman {
         m_nodes.push_back(&node);
 
         if (node.IsManualOrFullOutboundConn()) ++m_network_conn_counts[node.addr.GetNetwork()];
+    }
+
+    std::vector<CNode*> TestNodes() const
+    {
+        LOCK(m_nodes_mutex);
+        return m_nodes;
     }
 
     void ClearTestNodes()
@@ -56,6 +63,19 @@ struct ConnmanTestMsg : public CConnman {
 
     bool ReceiveMsgFrom(CNode& node, CSerializedNetMsg&& ser_msg) const;
     void FlushSendBuffer(CNode& node) const;
+
+    bool AlreadyConnected(const CAddress& addr) { return AlreadyConnectedToAddress(addr); };
+
+    CNode* ConnectPeer(PeerManager& peerman, const char* pszDest, ConnectionType conn_type) EXCLUSIVE_LOCKS_REQUIRED(!m_unused_i2p_sessions_mutex)
+    {
+        CNode* node = ConnectNode(CAddress{}, pszDest, /*fCountFailure=*/false, conn_type, /*m_use_v2transport=*/true);
+        if (!node) return nullptr;
+        node->SetCommonVersion(PROTOCOL_VERSION);
+        peerman.InitializeNode(*node, ServiceFlags(NODE_NETWORK | NODE_WITNESS));
+        node->fSuccessfullyConnected = true;
+        AddTestNode(*node);
+        return node;
+    }
 };
 
 constexpr ServiceFlags ALL_SERVICE_FLAGS[]{
