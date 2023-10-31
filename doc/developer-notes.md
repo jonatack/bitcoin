@@ -1075,7 +1075,8 @@ Source code organization
     avoided when using only lowercase characters in source code filenames.
 
 - Every `.cpp` and `.h` file should `#include` every header file it directly uses classes, functions or other
-  definitions from, even if those headers are already included indirectly through other headers.
+  definitions from, even if those headers are already included indirectly through other headers,
+  with the exception of the platform-specific headers in the `src/compat/` directory.
 
   - *Rationale*: Excluding headers because they are already indirectly included results in compilation
     failures when those indirect dependencies change. Furthermore, it obscures what the real code
