@@ -821,7 +821,7 @@ std::vector<CAddress> AddrManImpl::GetAddr_(size_t max_addresses, size_t max_pct
         nNodes = std::min(nNodes, max_addresses);
     }
 
-    // gather a list of random nodes, skipping those of low quality
+    // Gather a list of random nodes, optionally filtering by network or by quality
     const auto now{Now<NodeSeconds>()};
     std::vector<CAddress> addresses;
     addresses.reserve(nNodes);
@@ -839,7 +839,7 @@ std::vector<CAddress> AddrManImpl::GetAddr_(size_t max_addresses, size_t max_pct
         // Filter by network (optional)
         if (network != std::nullopt && ai.GetNetClass() != network) continue;
 
-        // Filter for quality
+        // Filter for quality (optional)
         if (ai.IsTerrible(now) && filtered) continue;
 
         addresses.push_back(ai);
