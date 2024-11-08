@@ -35,9 +35,9 @@ public:
     std::vector<unsigned char> GetGroup(const CNetAddr& address) const;
 
     /**
-     *  Get the autonomous system on the BGP path to address.
+     * Get the autonomous system number at the end of the BGP path to the IP address.
      *
-     *  The ip->AS mapping depends on how asmap is constructed.
+     * The IP->AS mapping depends on how the AS map is constructed.
      */
     uint32_t GetMappedAS(const CNetAddr& address) const;
 
