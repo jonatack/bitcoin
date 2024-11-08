@@ -840,7 +840,7 @@ std::vector<CAddress> AddrManImpl::GetAddr_(size_t max_addresses, size_t max_pct
         if (network != std::nullopt && ai.GetNetClass() != network) continue;
 
         // Filter for quality (optional)
-        if (ai.IsTerrible(now) && filtered) continue;
+        if (filtered && ai.IsTerrible(now)) continue;
 
         addresses.push_back(ai);
     }
