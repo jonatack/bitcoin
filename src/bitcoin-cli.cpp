@@ -154,12 +154,14 @@ static int AppInitRPC(int argc, char* argv[])
             strUsage += "\n"
                 "The bitcoin-cli utility provides a command line interface to interact with a " CLIENT_NAME " RPC server.\n"
                 "\nIt can be used to query network information, manage wallets, create or broadcast transactions, and control the " CLIENT_NAME " server.\n"
-                "\nUse the \"help\" command to list all commands. Use \"help <command>\" to show help for that command.\n"
+                "\nUse the \"help\" command to list all commands, and \"help <command>\" to show the help for a particular command.\n"
+                "Use the \"helpdebug\" command to list all commands, including debugging/testing ones not returned by \"help\" to reduce footgun risk.\n"
                 "The -named option allows you to specify parameters using the key=value format, eliminating the need to pass unused positional parameters.\n"
                 "\n"
                 "Usage: bitcoin-cli [options] <command> [params]\n"
                 "or:    bitcoin-cli [options] -named <command> [name=value]...\n"
                 "or:    bitcoin-cli [options] help\n"
+                "or:    bitcoin-cli [options] helpdebug\n"
                 "or:    bitcoin-cli [options] help <command>\n"
                 "\n";
             strUsage += "\n" + gArgs.GetHelpMessage();

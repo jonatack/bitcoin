@@ -69,7 +69,7 @@ struct RPCCommandExecution
     }
 };
 
-std::string CRPCTable::help(const std::string& strCommand, const JSONRPCRequest& helpreq) const
+std::string CRPCTable::help(const std::string& strCommand, const JSONRPCRequest& helpreq, bool show_debug) const
 {
     std::string strRet;
     std::string category;
@@ -89,8 +89,9 @@ std::string CRPCTable::help(const std::string& strCommand, const JSONRPCRequest&
     {
         const CRPCCommand *pcmd = command.second;
         std::string strMethod = pcmd->name;
-        if ((strCommand != "" || pcmd->category == "hidden") && strMethod != strCommand)
+        if (((!show_debug && !strCommand.empty()) || pcmd->category == "hidden") && strMethod != strCommand) {
             continue;
+        }
         jreq.strMethod = strMethod;
         try
         {
@@ -147,7 +148,32 @@ static RPCHelpMan help()
         return tableRPC.dumpArgMap(jsonRequest);
     }
 
-    return tableRPC.help(strCommand, jsonRequest);
+    return tableRPC.help(strCommand == "helpdebug" ? "help" : strCommand, jsonRequest);
+},
+    };
+}
+
+static RPCHelpMan helpdebug()
+{
+    return RPCHelpMan{"helpdebug",
+                "\nList all commands (including debugging/testing ones not returned by the help RPC to reduce footgun risk), or get help for a specified command.\n",
+                {
+                    {"command", RPCArg::Type::STR, RPCArg::DefaultHint{"all commands"}, "The command to get help on"},
+                },
+                {
+                    RPCResult{RPCResult::Type::STR, "", "The help text"},
+                    RPCResult{RPCResult::Type::ANY, "", ""},
+                },
+                RPCExamples{""},
+        [&](const RPCHelpMan& self, const JSONRPCRequest& jsonRequest) -> UniValue
+{
+    std::string strCommand;
+    if (jsonRequest.params.size() > 0) {
+        strCommand = jsonRequest.params[0].get_str();
+    }
+
+    const bool show_debug{strCommand.empty() ? true : false};
+    return tableRPC.help(strCommand == "help" ? "helpdebug" : strCommand, jsonRequest, show_debug);
 },
     };
 }
@@ -246,6 +272,7 @@ static const CRPCCommand vRPCCommands[]{
     /* Overall control/query calls */
     {"control", &getrpcinfo},
     {"control", &help},
+    {"control", &helpdebug},
     {"control", &stop},
     {"control", &uptime},
 };
