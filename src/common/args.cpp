@@ -624,7 +624,7 @@ std::string ArgsManager::GetHelpMessage() const
                 usage += HelpMessageGroup("ZeroMQ notification options:");
                 break;
             case OptionsCategory::DEBUG_TEST:
-                usage += HelpMessageGroup("Debugging/Testing options:");
+                usage += HelpMessageGroup("Debugging/testing options:");
                 break;
             case OptionsCategory::NODE_RELAY:
                 usage += HelpMessageGroup("Node relay options:");
@@ -648,16 +648,16 @@ std::string ArgsManager::GetHelpMessage() const
                 usage += HelpMessageGroup("Chain selection options:");
                 break;
             case OptionsCategory::GUI:
-                usage += HelpMessageGroup("UI Options:");
+                usage += HelpMessageGroup("UI options:");
                 break;
             case OptionsCategory::COMMANDS:
                 usage += HelpMessageGroup("Commands:");
                 break;
             case OptionsCategory::REGISTER_COMMANDS:
-                usage += HelpMessageGroup("Register Commands:");
+                usage += HelpMessageGroup("Register commands:");
                 break;
             case OptionsCategory::CLI_COMMANDS:
-                usage += HelpMessageGroup("CLI Commands:");
+                usage += HelpMessageGroup("CLI commands:");
                 break;
             default:
                 break;
